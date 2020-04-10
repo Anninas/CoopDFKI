@@ -8,6 +8,7 @@ Created on Sun Jan 26 17:55:54 2020
 import json
 from os import listdir
 from os.path import join
+import os
 import keras
 import numpy as np
 import PIL
@@ -85,17 +86,22 @@ def Offset2dAnnotation(img, bound):
     
   #  if case == 0:
         
-    
+#Skalierung mit opencv.resize, interpolation cubic
+  
 ###END FUNCTION SECTION
 
-#Skalierung mit opencv.resize, interpolation cubic
+
 
 
 
 ###START LOADING DATA
+  
+script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
+rel_path = "../Flurplandaten/flo2plan_icdar_instances.json"
+metadata_path = os.path.join(script_dir, rel_path)
 
 #Load json file    
-metadata = json.loads(open("C:/Users/annika/CloudStation/KooperationsphaseHector/Flurplandaten/flo2plan-ICDAR2019/flo2plan_icdar_instances.json", 'r').read())
+metadata = json.loads(open(metadata_path, 'r').read())
 
 #List for images
 imgs = []
@@ -104,7 +110,8 @@ imgs = []
 imgs_nametoind = {}
 
 #Path for accessing images
-path = "C:/Users/annika/CloudStation/KooperationsphaseHector/Flurplandaten/flo2plan-ICDAR2019/images"
+rel_path = "../Flurplandaten/images"
+path = os.path.join(script_dir, rel_path)
 
 #Counter to get index of image
 count = 0
