@@ -12,11 +12,13 @@ import os
 import keras
 import numpy as np
 import PIL
+import PIL.ImageOps
 import matplotlib.pyplot as plt
 from keras import layers
 from keras.models import Model
-#import OpenCV as cv
+#import opencv python as cv2
 import random
+import imutils
 
 random.seed()
 
@@ -24,6 +26,12 @@ random.seed()
 
 
 ###START FUNCTION SECTION   
+
+def invert(img):
+      
+    inverted_image = 255 - img
+        
+    return inverted_image
                 
 def StandardAnnotation(img, bound):
     
@@ -76,18 +84,59 @@ def Offset2dAnnotation(img, bound):
      
      return img[annot_y1:annot_y2, annot_x1:annot_x2]
     
-#def RotateAnnotation(img, bound):                                 #Rotation of offset or standard annotation
+def RotateAnnotation(img, bound):                                 #Rotation of offset or standard annotation
     
     #Ausschnitt, etwas größer als Annotation, drehen
     #imutils installieren, s. Skype
     #45°, Vielfache davon
     
- #   case = random.randint(0, 3)
+    case = random.randint(0, 3)
     
-  #  if case == 0:
+    if case == 0:
+        rot_img = StandardAnnotation(img, bound)
+    elif case == 1:
+        rot_img = OffsetHorizontalAnnotation(img, bound)
+    elif case == 2:
+        rot_img = OffsetVerticalAnnotation(img, bound)
+    elif case == 3:
+        rot_img = Offset2dAnnotation(img, bound)
         
+    angle = random.randint(1, 7)
+    try:
+        result = invert(imutils.rotate_bound(invert(rot_img), angle*45))
+        return result
+    except:
+        print("Geht nicht!")    
+
 #Skalierung mit opencv.resize, interpolation cubic
-  
+    
+def RescaleAnnotation(img, bound):
+    
+    case = random.randint(0, 3)
+    
+    if case == 0:
+        rot_img = StandardAnnotation(img, bound)
+    elif case == 1:
+        rot_img = OffsetHorizontalAnnotation(img, bound)
+    elif case == 2:
+        rot_img = OffsetVerticalAnnotation(img, bound)
+    elif case == 3:
+        rot_img = Offset2dAnnotation(img, bound)
+        
+    orig_height = rot_img.shape[0]
+    orig_width = rot_img.shape[1]
+    
+    scale = random.randint(80, 120)/100
+    
+    scale_img = cv2.resize(rot_img, (orig_height*scale, orig_width*scale), interpolation = cv2.INTER_CUBIC)
+    
+    y1 = (scale_img.shape[0]-orig_height)/2
+    y2 = y1 + orig_height
+    x1 = (scale_img.shape[1]-orig_width)/2
+    x2 = x1 + orig_width
+    
+    result = scale_img[y1:y2][x1:x2]
+    
 ###END FUNCTION SECTION
 
 
@@ -163,7 +212,7 @@ for annot in metadata['annotations']:
         #Create 20 varied Verions of this Annotation        
         for i in range(0, 20):
             
-            augmentation = random.randint(0, 2)
+            augmentation = random.randint(0, 3)
             
             if augmentation == 0:                                   #Horizontaler Offset
                 aug_annot = OffsetHorizontalAnnotation(annot_img, bbox)
@@ -174,7 +223,8 @@ for annot in metadata['annotations']:
             elif augmentation == 2:                                 #2D - Offset
                 aug_annot = Offset2dAnnotation(annot_img, bbox)
                 annotations.append(aug_annot)
-            #elif augmentation == 3:
+            elif augmentation == 3:
+                aug_annot = RotateAnnotation(annot_img, bbox)
                 
             #elif augmentation == 4:
                 
