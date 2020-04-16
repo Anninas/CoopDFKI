@@ -16,7 +16,7 @@ import PIL.ImageOps
 import matplotlib.pyplot as plt
 from keras import layers
 from keras.models import Model
-#import opencv python as cv2
+import cv2
 import random
 import imutils
 
@@ -98,7 +98,7 @@ def RotateAnnotation(img, bound):                                 #Rotation of o
         rot_img = OffsetHorizontalAnnotation(img, bound)
     elif case == 2:
         rot_img = OffsetVerticalAnnotation(img, bound)
-    elif case == 3:
+    else:
         rot_img = Offset2dAnnotation(img, bound)
         
     angle = random.randint(1, 7)
@@ -136,6 +136,7 @@ def RescaleAnnotation(img, bound):
     x2 = x1 + orig_width
     
     result = scale_img[y1:y2][x1:x2]
+    return result
     
 ###END FUNCTION SECTION
 

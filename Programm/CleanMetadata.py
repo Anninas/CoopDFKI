@@ -23,6 +23,7 @@ import imutils
 ###START LOADING DATA
 script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
 rel_path = "../Flurplandaten/flo2plan_icdar_instances.json"
+new_path = os.path.join(script_dir, "../Flurplandaten/floorplan_metadata_cleaned.json")
 metadata_path = os.path.join(script_dir, rel_path)
 
 #Load json file    
@@ -73,17 +74,30 @@ n = 0
 
 while n < len(metadata['annotations']):
     
-    bbox = metadata['annotations'][n]['bbox']
     image_id = metadata['annotations'][n]['image_id']
     
     if image_id in imgs_idtoind:
     
+        bbox = metadata['annotations'][n]['bbox']
         img_width = metadata['images'][imgs_idtoind[image_id]]['width']
         img_height = metadata['images'][imgs_idtoind[image_id]]['height']
     
-        if (bbox[3] < 10) or (bbox[2] < 10) or (bbox[3] > 100) or (bbox[2] > 100 or (img_height < bbox[1]) or (img_height < bbox[3])or (img_width < bbox[0]) or (img_width < bbox[2])):        
+        if (bbox[3] < 10) or (bbox[2] < 10) or (bbox[3] > 100) or (bbox[2] > 100) or (img_height < bbox[1]) or (img_height < bbox[3])or (img_width < bbox[0]) or (img_width < bbox[2]):       
             del metadata['annotations'][n]
         
-        n += 1
+    n += 1
     
 ###END CLEANING
+
+###WRITE INTO FILE
+    
+with open(new_path, 'w') as f:
+        json.dump(metadata, f)
+
+
+
+
+
+
+
+
