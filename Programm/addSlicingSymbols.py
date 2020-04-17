@@ -46,7 +46,7 @@ def StandardAnnotation(img, bound):
     
 def OffsetHorizontalAnnotation(img, bound):
      
-     offset = random.randint(10, 50)
+     offset = random.randint(1, int(bound[2]/2))
      
      annot_x1 = int(bound[0]) + offset                            #Get x-coordinate of upper left corner rounded down
      annot_y1 = int(bound[1])                                     #Get y-coordinate of upper left corner rounded down
@@ -59,7 +59,7 @@ def OffsetHorizontalAnnotation(img, bound):
         
 def OffsetVerticalAnnotation(img, bound):
      
-     offset = random.randint(10, 50)
+     offset = random.randint(1, int(bound[3]/2))
      
      annot_x1 = int(bound[0])                                     #Get x-coordinate of upper left corner rounded down
      annot_y1 = int(bound[1])  + offset                           #Get y-coordinate of upper left corner rounded down
@@ -72,8 +72,11 @@ def OffsetVerticalAnnotation(img, bound):
  
 def Offset2dAnnotation(img, bound):
     
-     offset_x = random.randint(10, 50)
-     offset_y = random.randint(10, 50)
+    #Achtung, bitte korrigieren: falls der Abstand der Annotation zum Rand kleiner ist als die halbe Annotation,
+    #muss der stattdessen Abstand zum Rand als Maximum für Random genommen werden --> if voranstellen bei allen Offsets
+    
+     offset_x = random.randint(1, int(bound[2]/2))
+     offset_y = random.randint(1, int(bound[3]/2))
      
      annot_x1 = int(bound[0]) + offset_y                          #Get x-coordinate of upper left corner rounded down
      annot_y1 = int(bound[1]) + offset_x                          #Get y-coordinate of upper left corner rounded down
@@ -126,14 +129,18 @@ def RescaleAnnotation(img, bound):
     orig_height = rot_img.shape[0]
     orig_width = rot_img.shape[1]
     
-    scale = random.randint(80, 120)/100
+    scale = random.randint(8, 12)/10
     
-    scale_img = cv2.resize(rot_img, (orig_height*scale, orig_width*scale), interpolation = cv2.INTER_CUBIC)
+    try: 
+        scale_img = cv2.resize(rot_img, (int(orig_height*scale), int(orig_width*scale)), interpolation = cv2.INTER_CUBIC)
+        
+    except:
+        print("Error!")
     
-    y1 = (scale_img.shape[0]-orig_height)/2
-    y2 = y1 + orig_height
-    x1 = (scale_img.shape[1]-orig_width)/2
-    x2 = x1 + orig_width
+    y1 = int((scale_img.shape[0]-orig_height)/2)
+    y2 = int(y1 + orig_height)
+    x1 = int((scale_img.shape[1]-orig_width)/2)
+    x2 = int(x1 + orig_width)
     
     result = scale_img[y1:y2][x1:x2]
     return result
@@ -147,7 +154,7 @@ def RescaleAnnotation(img, bound):
 ###START LOADING DATA
   
 script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
-rel_path = "../Flurplandaten/flo2plan_icdar_instances.json"
+rel_path = "../Flurplandaten/floorplan_metadata_cleaned.json"
 metadata_path = os.path.join(script_dir, rel_path)
 
 #Load json file    
@@ -213,11 +220,10 @@ for annot in metadata['annotations']:
         #Create 20 varied Verions of this Annotation        
         for i in range(0, 20):
             
-            augmentation = random.randint(0, 3)
+            augmentation = random.randint(0, 4)
             
             if augmentation == 0:                                   #Horizontaler Offset
                 aug_annot = OffsetHorizontalAnnotation(annot_img, bbox)
-                annotations.append(aug_annot)
             elif augmentation == 1:                                 #Vertikaler Offset
                 aug_annot = OffsetVerticalAnnotation(annot_img, bbox)    
                 annotations.append(aug_annot)
@@ -225,11 +231,11 @@ for annot in metadata['annotations']:
                 aug_annot = Offset2dAnnotation(annot_img, bbox)
                 annotations.append(aug_annot)
             elif augmentation == 3:
-                aug_annot = RotateAnnotation(annot_img, bbox)
+                aug_annot = RotateAnnotation(annot_img, bbox) 
+            elif augmentation == 4:
+                aug_annot = RescaleAnnotation(annot_img, bbox)
                 
-            #elif augmentation == 4:
-                
-            #else:
+            annotations.append(aug_annot)
         
         
 
