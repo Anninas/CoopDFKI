@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+preprocessed_annotations.json
+preprocessed_annotations.zip
+
 # C extensions
 *.so
 

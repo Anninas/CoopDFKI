@@ -19,136 +19,147 @@ from keras.models import Model
 import cv2
 import random
 import imutils
+import io
 
 random.seed()
 
 
 
 
-###START FUNCTION SECTION   
+###START FUNCTION SECTION 
+def trim(value, min, max):
+    
+    #Keeps value between min and max
+    if(value<min):
+        return min
+    elif(value>max):
+        return max
+    else:
+        return value
 
 def invert(img):
       
+    #inverts an image over 255
     inverted_image = 255 - img
         
     return inverted_image
                 
 def StandardAnnotation(img, bound):
     
-    annot_x1 = int(bound[0])                                     #Get x-coordinate of upper left corner rounded down
-    annot_y1 = int(bound[1])                                     #Get y-coordinate of upper left corner rounded down
-    annot_width = int(np.ceil(bound[2]))                         #Get width rounded up
-    annot_height = int(np.ceil(bound[3]))                        #Get height rounded up
-    annot_x2 = annot_x1 + annot_width                            #Calculate x-coordinate of lower right corner 
-    annot_y2 = annot_y1 + annot_height                           #Calculate y-coordinate of lower right corner
+    #Cuts out the annotation as the centre of a 100x100 image
+    
+    #Get x-coordinate of upper left corner rounded down
+    annot_x1 = trim(int((bound[0]) - (100 - bound[2])/2), 0, img.shape[1]-100) 
+    #Get y-coordinate of upper left corner rounded down               
+    annot_y1 = trim(int((bound[1]) - (100 - bound[3])/2), 0, img.shape[0]-100) 
+    #Get width and height
+    annot_width = 100
+    annot_height = 100
+    #Calculate x-coordinate of lower right corner
+    annot_x2 = annot_x1 + annot_width
+    #Calculate y-coordinate of lower right corner                             
+    annot_y2 = annot_y1 + annot_height                           
     
     return img[annot_y1:annot_y2, annot_x1:annot_x2]
-    
-def OffsetHorizontalAnnotation(img, bound):
-     
-     offset = random.randint(1, int(bound[2]/2))
-     
-     annot_x1 = int(bound[0]) + offset                            #Get x-coordinate of upper left corner rounded down
-     annot_y1 = int(bound[1])                                     #Get y-coordinate of upper left corner rounded down
-     annot_width = int(np.ceil(bound[2]))                         #Get width rounded up
-     annot_height = int(np.ceil(bound[3]))                        #Get height rounded up
-     annot_x2 = annot_x1 + annot_width                            #Calculate x-coordinate of lower right corner 
-     annot_y2 = annot_y1 + annot_height                           #Calculate y-coordinate of lower right corner
-     
-     return img[annot_y1:annot_y2, annot_x1:annot_x2]
-        
-def OffsetVerticalAnnotation(img, bound):
-     
-     offset = random.randint(1, int(bound[3]/2))
-     
-     annot_x1 = int(bound[0])                                     #Get x-coordinate of upper left corner rounded down
-     annot_y1 = int(bound[1])  + offset                           #Get y-coordinate of upper left corner rounded down
-     annot_width = int(np.ceil(bound[2]))                         #Get width rounded up
-     annot_height = int(np.ceil(bound[3]))                        #Get height rounded up
-     annot_x2 = annot_x1 + annot_width                            #Calculate x-coordinate of lower right corner 
-     annot_y2 = annot_y1 + annot_height                           #Calculate y-coordinate of lower right corner
-     
-     return img[annot_y1:annot_y2, annot_x1:annot_x2]
  
 def Offset2dAnnotation(img, bound):
     
-    #Achtung, bitte korrigieren: falls der Abstand der Annotation zum Rand kleiner ist als die halbe Annotation,
-    #muss der stattdessen Abstand zum Rand als Maximum für Random genommen werden --> if voranstellen bei allen Offsets
+    # Calculate actual coordiantes of upper left corner of 100x100 area
+    corner_100x100_no_offset_x = int(((bound[0])) - (100 - bound[2])/2)
+    corner_100x100_no_offset_y = int(((bound[1])) - (100 - bound[3])/2)
     
-     offset_x = random.randint(1, int(bound[2]/2))
-     offset_y = random.randint(1, int(bound[3]/2))
-     
-     annot_x1 = int(bound[0]) + offset_y                          #Get x-coordinate of upper left corner rounded down
-     annot_y1 = int(bound[1]) + offset_x                          #Get y-coordinate of upper left corner rounded down
-     annot_width = int(np.ceil(bound[2]))                         #Get width rounded up
-     annot_height = int(np.ceil(bound[3]))                        #Get height rounded up
-     annot_x2 = annot_x1 + annot_width                            #Calculate x-coordinate of lower right corner 
-     annot_y2 = annot_y1 + annot_height                           #Calculate y-coordinate of lower right corner
-     
-     return img[annot_y1:annot_y2, annot_x1:annot_x2]
+    #Get offset (min half annotation should be still in 100x100)
+    offset_x = random.randint(-50, 50)
+    offset_y = random.randint(-50, 50)
     
-def RotateAnnotation(img, bound):                                 #Rotation of offset or standard annotation
+    #Get coordinates of upper left corner (100x100) with offset
+    corner_100x100_offset_x1 = trim(corner_100x100_no_offset_x + offset_x, 0, img.shape[1]-100)                       
+    corner_100x100_offset_y1 = trim(corner_100x100_no_offset_y + offset_y, 0, img.shape[0]-100) 
+    #Set width and height     
+    width = 100                         
+    height = 100 
+    #Get coordinates of lower right corner (100x100)                    
+    corner_100x100_offset_x2 = corner_100x100_offset_x1 + width  
+    corner_100x100_offset_y2 = corner_100x100_offset_y1 + height
     
-    #Ausschnitt, etwas größer als Annotation, drehen
-    #imutils installieren, s. Skype
-    #45°, Vielfache davon
+    result = img[corner_100x100_offset_y1:corner_100x100_offset_y2, corner_100x100_offset_x1:corner_100x100_offset_x2]
     
-    case = random.randint(0, 3)
+    if(result.shape[0] != 100 or result.shape[1] != 100):
+        print("Size issue")
+    
+    return result
+    
+def RotateAnnotation(img, bound):                                 
+    
+    #Rotation of offset or standard annotation    
+    case = random.randint(0, 1)
     
     if case == 0:
         rot_img = StandardAnnotation(img, bound)
-    elif case == 1:
-        rot_img = OffsetHorizontalAnnotation(img, bound)
-    elif case == 2:
-        rot_img = OffsetVerticalAnnotation(img, bound)
     else:
         rot_img = Offset2dAnnotation(img, bound)
-        
+    
+    #Get the angle (*45°) to rotate the image with
     angle = random.randint(1, 7)
-    try:
-        result = invert(imutils.rotate_bound(invert(rot_img), angle*45))
-        return result
-    except:
-        print("Geht nicht!")    
+    
+    #Save the original scale of the image (in case it was not 100x100)
+    orig_height = rot_img.shape[0]
+    orig_width = rot_img.shape[1]
+    
+    #Rotate the image
+    rotated = invert(imutils.rotate_bound(invert(rot_img), angle*45))
+    
+    #Crop the image back to 100*100
+    y1 = int(abs((rotated.shape[0]-orig_height)/2))
+    y2 = y1 + 100
+    x1 = int(abs((rotated.shape[1]-orig_width)/2))
+    x2 = x1 + 100
+    
+    result = rotated[y1:y2, x1:x2]
+    
+    if(result.shape[0] != 100 or result.shape[1] != 100):
+        print("Size issue")
+    
+    return result
+    
 
 #Skalierung mit opencv.resize, interpolation cubic
     
 def RescaleAnnotation(img, bound):
     
-    case = random.randint(0, 3)
+    #Cut the annotation with or without offset 
+    case = random.randint(0, 1)
     
     if case == 0:
         rot_img = StandardAnnotation(img, bound)
-    elif case == 1:
-        rot_img = OffsetHorizontalAnnotation(img, bound)
-    elif case == 2:
-        rot_img = OffsetVerticalAnnotation(img, bound)
-    elif case == 3:
+    else:
         rot_img = Offset2dAnnotation(img, bound)
-        
+    
+    #Save the original size of the image (in case it is not 100)
     orig_height = rot_img.shape[0]
     orig_width = rot_img.shape[1]
     
-    scale = random.randint(8, 12)/10
+    #Get the scale factor
+    scale = random.randint(11, 14)/10
     
-    try: 
-        scale_img = cv2.resize(rot_img, (int(orig_height*scale), int(orig_width*scale)), interpolation = cv2.INTER_CUBIC)
-        
-    except:
-        print("Error!")
+    #Scale the image with the factor 
+    scale_img = cv2.resize(rot_img, (int(orig_height*scale), int(orig_width*scale)), interpolation = cv2.INTER_CUBIC)
+    #Cut the scaled image back to 100*100
+    y1 = int(abs((scale_img.shape[0]-orig_height)/2))
+    y2 = y1 + 100
+    x1 = int(abs((scale_img.shape[1]-orig_width)/2))
+    x2 = x1 + 100
+
+    result = scale_img[y1:y2, x1:x2]
     
-    y1 = int((scale_img.shape[0]-orig_height)/2)
-    y2 = int(y1 + orig_height)
-    x1 = int((scale_img.shape[1]-orig_width)/2)
-    x2 = int(x1 + orig_width)
+    if(result.shape[0] != 100 or result.shape[1] != 100):
+        print("Size issue")
     
-    result = scale_img[y1:y2][x1:x2]
     return result
     
+    
+    
 ###END FUNCTION SECTION
-
-
-
 
 
 ###START LOADING DATA
@@ -176,9 +187,12 @@ count = 0
 #Loop through elements (-->e) in directory
 for e in listdir(path):
     
-    link = join(path, e)                                            #Get the element's link
-    curr_img = np.array(PIL.Image.open(link).convert('L'))         #Load image and transform it to B&W numpy array
-    imgs.append(curr_img)                                           #Add array-shaped image to list
+    #Get the element's link
+    link = join(path, e)  
+    #Load image and transform it to B&W numpy array                                          
+    curr_img = np.array(PIL.Image.open(link).convert('L'))         
+    #Add array-shaped image to list
+    imgs.append(curr_img)                                           
     
     imgs_nametoind[e] = count
     
@@ -191,11 +205,15 @@ imgs_idtoind = {}
 #Loop through all image entries (-->ie) in metatdata
 for ie in metadata['images']:
     
-    if ie['file_name'] in imgs_nametoind:                           #Check if image exists in imported image list
+    #Check if image exists in imported image list
+    if ie['file_name'] in imgs_nametoind:                           
         
-        index = imgs_nametoind[ie['file_name']]                     #Get the index to the current file name
-        img_id = ie['id']                                           #Get the id of this file
-        imgs_idtoind[img_id] = index                                #Link id to the index
+        #Get the index to the current file name
+        index = imgs_nametoind[ie['file_name']]   
+        #Get the id of this file                  
+        img_id = ie['id']   
+        #Link id to the index                                        
+        imgs_idtoind[img_id] = index                                
 
 ###END LOADING DATA
 
@@ -206,13 +224,16 @@ annotations = []
 
 #Loop through all annotations
 for annot in metadata['annotations']:
-    bbox = annot['bbox']                                            #Get bounding box
-    img_id = annot['image_id']                                      #Get image id
+    #Get bounding box
+    bbox = annot['bbox']                                            
+    #Get image id
+    img_id = annot['image_id']                                      
     
     #Check if the image to the id exists
     if img_id in imgs_idtoind:
         
-        annot_img = imgs[imgs_idtoind[img_id]]                      #Get the image
+        #Get the image
+        annot_img = imgs[imgs_idtoind[img_id]]                      
         
         #Add current annotation to list
         annotations.append(StandardAnnotation(annot_img, bbox))
@@ -220,28 +241,50 @@ for annot in metadata['annotations']:
         #Create 20 varied Verions of this Annotation        
         for i in range(0, 20):
             
-            augmentation = random.randint(0, 4)
+            #Type of augmentation
+            augmentation = random.randint(0, 2)
             
-            if augmentation == 0:                                   #Horizontaler Offset
-                aug_annot = OffsetHorizontalAnnotation(annot_img, bbox)
-            elif augmentation == 1:                                 #Vertikaler Offset
-                aug_annot = OffsetVerticalAnnotation(annot_img, bbox)    
-                annotations.append(aug_annot)
-            elif augmentation == 2:                                 #2D - Offset
+            #Offset only
+            if augmentation == 0:                                 
                 aug_annot = Offset2dAnnotation(annot_img, bbox)
                 annotations.append(aug_annot)
-            elif augmentation == 3:
-                aug_annot = RotateAnnotation(annot_img, bbox) 
-            elif augmentation == 4:
-                aug_annot = RescaleAnnotation(annot_img, bbox)
-                
-            annotations.append(aug_annot)
+            #Rotate
+            elif augmentation == 1:
+                try:
+                    aug_annot = RotateAnnotation(annot_img, bbox)
+                    annotations.append(aug_annot)
+                except:
+                    print("Rotate Error")
+            #Rescale
+            elif augmentation == 2:
+                try:
+                    aug_annot = RescaleAnnotation(annot_img, bbox)
+                    annotations.append(aug_annot)
+                except:
+                    print("Scale Error")
+            
+            #if(aug_annot.shape[0] != 100 or aug_annot.shape[1] != 100):
+             #   print("Wrong Size")
         
+#Save annotations to json
+#https://stackoverflow.com/questions/30698004/how-can-i-serialize-a-numpy-array-while-preserving-matrix-dimensions
+
+memfile = io.BytesIO()
+np.save(memfile, annotations)
+memfile.seek(0)
+
+script_dir = os.path.dirname(__file__)
+annotation_path = os.path.join(script_dir, "../Flurplandaten/preprocessed_annotations.json")
+
+with open(annotation_path, 'w') as f:
+        json.dump(memfile.read().decode('latin-1'), f)
+
         
 
 ###END PREPROCESSING 
     
-   
+###NOTES:
+#BBox: Wert in der Breite, Wert in der Höhe, Breite, Höhe
     
     
     

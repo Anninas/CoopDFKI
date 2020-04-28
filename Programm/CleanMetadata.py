@@ -85,7 +85,7 @@ while n < len(metadata['annotations']):
     
         #Achtung, ändern: Nicht die obere linke Ecke prüfen, sondern die rechte untere!!!
     
-        if (bbox[3] < 10) or (bbox[2] < 10) or (bbox[3] > 100) or (bbox[2] > 100) or (img_height < bbox[1]) or (img_height < bbox[3])or (img_width < bbox[0]) or (img_width < bbox[2]):       
+        if (bbox[3] < 10) or (bbox[2] < 10) or (bbox[3] > 100) or (bbox[2] > 100) or (img_height < (bbox[1] + bbox[3])) or (img_height < bbox[3])or (img_width < (bbox[0]+bbox[2])) or (img_width < bbox[2]):       
             del metadata['annotations'][n]
         
     n += 1
