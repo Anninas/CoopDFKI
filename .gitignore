@@ -5,6 +5,8 @@ __pycache__/
 
 preprocessed_annotations.json
 preprocessed_annotations.zip
+preprocessed_annotations.p
+object_list_for_annotations.json
 
 # C extensions
 *.so

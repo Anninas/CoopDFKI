@@ -19,7 +19,7 @@ from keras.models import Model
 import cv2
 import random
 import imutils
-import io
+import pickle
 
 random.seed()
 
@@ -222,12 +222,18 @@ for ie in metadata['images']:
 #List of images
 annotations = []
 
+#List of objects in annotations
+object_categories = []
+
 #Loop through all annotations
 for annot in metadata['annotations']:
     #Get bounding box
     bbox = annot['bbox']                                            
     #Get image id
-    img_id = annot['image_id']                                      
+    img_id = annot['image_id']    
+
+    #Get object on annotation
+    object_category = annot['category_id']                                  
     
     #Check if the image to the id exists
     if img_id in imgs_idtoind:
@@ -237,6 +243,8 @@ for annot in metadata['annotations']:
         
         #Add current annotation to list
         annotations.append(StandardAnnotation(annot_img, bbox))
+        object_categories.append(object_category)
+        
         
         #Create 20 varied Verions of this Annotation        
         for i in range(0, 20):
@@ -248,11 +256,13 @@ for annot in metadata['annotations']:
             if augmentation == 0:                                 
                 aug_annot = Offset2dAnnotation(annot_img, bbox)
                 annotations.append(aug_annot)
+                object_categories.append(object_category)
             #Rotate
             elif augmentation == 1:
                 try:
                     aug_annot = RotateAnnotation(annot_img, bbox)
                     annotations.append(aug_annot)
+                    object_categories.append(object_category)
                 except:
                     print("Rotate Error")
             #Rescale
@@ -260,6 +270,7 @@ for annot in metadata['annotations']:
                 try:
                     aug_annot = RescaleAnnotation(annot_img, bbox)
                     annotations.append(aug_annot)
+                    object_categories.append(object_category)
                 except:
                     print("Scale Error")
             
@@ -269,17 +280,14 @@ for annot in metadata['annotations']:
 #Save annotations to json
 #https://stackoverflow.com/questions/30698004/how-can-i-serialize-a-numpy-array-while-preserving-matrix-dimensions
 
-memfile = io.BytesIO()
-np.save(memfile, annotations)
-memfile.seek(0)
-
 script_dir = os.path.dirname(__file__)
-annotation_path = os.path.join(script_dir, "../Flurplandaten/preprocessed_annotations.json")
+annotation_path = os.path.join(script_dir, "../Flurplandaten/preprocessed_annotations.p")
 
-with open(annotation_path, 'w') as f:
-        json.dump(memfile.read().decode('latin-1'), f)
+pickle.dump(annotations, open(annotation_path, "wb"))
 
-        
+object_path = os.path.join(script_dir, "../Flurplandaten/object_list_for_annotations.p")
+
+pickle.dump(object_categories, open(object_path, "wb"))
 
 ###END PREPROCESSING 
     
