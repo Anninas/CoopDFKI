@@ -34,9 +34,10 @@ train_categories = pickle.load(open(categories_path, 'rb'))
 
 
 
-base_model = keras.applications.ResNet50(weights = 'imagenet', include_top = False, classes = 12)
+base_model = keras.applications.InceptionV3(weights = 'imagenet', include_top = False, classes = 12, input_shape = (100,100,3))
 
 x = base_model.output
+x = layers.Flatten()(x)
 predictions = keras.layers.Dense(12, activation='softmax')(x)
 
 # this is the model we will train
@@ -45,4 +46,10 @@ model.compile(optimizer = "adam", loss = "categorical_crossentropy", metrics=["a
 
 print(model.summary())
 
-model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = 64, epochs = 10)
+model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = 128, epochs = 8)
+
+
+#Change number!!!
+net_path = os.path.join(script_dir, "../Netze/try4.h5")
+
+model.save(net_path)
