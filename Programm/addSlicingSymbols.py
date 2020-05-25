@@ -9,16 +9,16 @@ import json
 from os import listdir
 from os.path import join
 import os
-import keras
+#import keras
 import numpy as np
 import PIL
 import PIL.ImageOps
 import matplotlib.pyplot as plt
-from keras import layers
-from keras.models import Model
-import cv2
+#from keras import layers
+#from keras.models import Model
+#import cv2
 import random
-import imutils
+#import imutils
 import pickle
 
 random.seed()
@@ -190,7 +190,7 @@ for e in listdir(path):
     #Get the element's link
     link = join(path, e)  
     #Load image and transform it to B&W numpy array                                          
-    curr_img = np.array(PIL.Image.open(link).convert('L'))         
+    curr_img = np.array(PIL.Image.open(link).convert('L').convert('RGB'))         
     #Add array-shaped image to list
     imgs.append(curr_img)                                           
     
