@@ -10,6 +10,8 @@ object_list_for_annotations.json
 
 # C extensions
 *.so
+*.h5
+*.p
 
 # Distribution / packaging
 .Python

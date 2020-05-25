@@ -157,7 +157,17 @@ def RescaleAnnotation(img, bound):
     
     return result
     
+def HotKeyEncode(int_list, num_categories):
     
+    HotKeyList = []
+    
+    for element in int_list:
+        hotkey = np.zeros(num_categories)
+        hotkey[element-1] = 1
+        HotKeyList.append(hotkey)
+        
+    return HotKeyList
+        
     
 ###END FUNCTION SECTION
 
@@ -276,18 +286,21 @@ for annot in metadata['annotations']:
             
             #if(aug_annot.shape[0] != 100 or aug_annot.shape[1] != 100):
              #   print("Wrong Size")
+
+#Hot key encoding of object categories
+
         
 #Save annotations to json
 #https://stackoverflow.com/questions/30698004/how-can-i-serialize-a-numpy-array-while-preserving-matrix-dimensions
 
 script_dir = os.path.dirname(__file__)
 annotation_path = os.path.join(script_dir, "../Flurplandaten/preprocessed_annotations.p")
-
 pickle.dump(annotations, open(annotation_path, "wb"))
 
-object_path = os.path.join(script_dir, "../Flurplandaten/object_list_for_annotations.p")
+object_categories_encoded = HotKeyEncode(object_categories, 12)
 
-pickle.dump(object_categories, open(object_path, "wb"))
+object_path = os.path.join(script_dir, "../Flurplandaten/object_list_for_annotations.p")
+pickle.dump(object_categories_encoded, open(object_path, "wb"))
 
 ###END PREPROCESSING 
     
