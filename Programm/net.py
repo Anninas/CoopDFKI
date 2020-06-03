@@ -41,12 +41,13 @@ x = layers.Flatten()(x)
 predictions = keras.layers.Dense(12, activation='softmax')(x)
 
 # this is the model we will train
+opti = keras.optimizers.SGD(lr = 0.001)
 model = Model(inputs=base_model.input, outputs=predictions)
-model.compile(optimizer = "adam", loss = "categorical_crossentropy", metrics=["accuracy"])
+model.compile(optimizer = "sgd", loss = "categorical_crossentropy", metrics=["accuracy"])
 
 print(model.summary())
 
-model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = 128, epochs = 8)
+model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = 128, epochs = 15)
 
 
 #Change number!!!
