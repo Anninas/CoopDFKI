@@ -188,7 +188,7 @@ imgs = []
 imgs_nametoind = {}
 
 #Path for accessing images
-rel_path = "../Flurplandaten/images"
+rel_path = "../Flurplandaten/images_diagonals"
 path = os.path.join(script_dir, rel_path)
 
 #Counter to get index of image
@@ -294,12 +294,12 @@ for annot in metadata['annotations']:
 #https://stackoverflow.com/questions/30698004/how-can-i-serialize-a-numpy-array-while-preserving-matrix-dimensions
 
 script_dir = os.path.dirname(__file__)
-annotation_path = os.path.join(script_dir, "../Flurplandaten/preprocessed_annotations.p")
+annotation_path = os.path.join(script_dir, "../Flurplandaten/preprocessed__validation_annotations.p")
 pickle.dump(annotations, open(annotation_path, "wb"))
 
 object_categories_encoded = HotKeyEncode(object_categories, 12)
 
-object_path = os.path.join(script_dir, "../Flurplandaten/object_list_for_annotations.p")
+object_path = os.path.join(script_dir, "../Flurplandaten/object_list_for_validation_annotations.p")
 pickle.dump(object_categories_encoded, open(object_path, "wb"))
 
 ###END PREPROCESSING 
