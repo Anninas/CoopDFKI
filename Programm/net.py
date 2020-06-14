@@ -124,10 +124,13 @@ class evaluationCallback(keras.callbacks.Callback):
             
         
             #Array of 0s & one 1 showing which predicted results are of the current category
+            #y_pred_aktuell = predicted_results[:, category_number]
             y_pred_aktuell = np.array([np.array_equal(current_category, t) for t in standartized_predicted_result], dtype=np.uint8)
         
             #Calculating values
             f1_score = metric.f1_score(y_true_aktuell, y_pred_aktuell)
+            #Threshold is missing!!! Include!!!
+            #Expecting only probabilities for current class as 1-dim vector
             precision[category_number], recall[category_number], _ = metric.precision_recall_curve(y_true_aktuell, y_pred_aktuell)
             average_prec = metric.average_precision_score(y_true_aktuell, y_pred_aktuell)
         
