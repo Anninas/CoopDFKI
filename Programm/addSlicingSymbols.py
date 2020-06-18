@@ -16,17 +16,28 @@ import PIL.ImageOps
 import matplotlib.pyplot as plt
 #from keras import layers
 #from keras.models import Model
-#import cv2
+import cv2
 import random
-#import imutils
+import imutils
 import pickle
 
 random.seed()
 
 
 
-
 ###START FUNCTION SECTION 
+def getNormalizedNumbersOfAugmentation(old_numbers):
+    average = np.sum(old_numbers)/len(old_numbers)
+    augmentation_numbers = np.zeros(len(old_numbers))
+    for i in range(len(old_numbers)):
+        if(average-60 < old_numbers[i] < average+60):
+            augmentation_numbers[i] = 20
+        elif(average-60 > old_numbers[i]):
+            augmentation_numbers[i] = 20*(average-60)/old_numbers[i]
+        elif(average+60 < old_numbers[i]):
+            augmentation_numbers[i] = 20*(average+60)/old_numbers[i]
+    return augmentation_numbers
+
 def trim(value, min, max):
     
     #Keeps value between min and max
@@ -173,6 +184,10 @@ def HotKeyEncode(int_list, num_categories):
 
 
 ###START LOADING DATA
+training_annotations_per_category = [185, 67, 70, 318, 9, 161, 381, 46, 77, 145, 63, 78]
+augmentation_numbers_for_training = getNormalizedNumbersOfAugmentation(training_annotations_per_category)
+validation_annotations_per_category = [182, 60, 61, 313, 7, 123, 296, 48, 97, 107, 39, 66]
+augmentation_numbers_for_validation = getNormalizedNumbersOfAugmentation(validation_annotations_per_category)
   
 script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
 rel_path = "../Flurplandaten/floorplan_metadata_cleaned.json"
@@ -243,7 +258,7 @@ for annot in metadata['annotations']:
     img_id = annot['image_id']    
 
     #Get object on annotation
-    object_category = annot['category_id']                                  
+    object_category = annot['category_id']                           
     
     #Check if the image to the id exists
     if img_id in imgs_idtoind:
@@ -257,35 +272,32 @@ for annot in metadata['annotations']:
         
         
         #Create 20 varied Verions of this Annotation        
-        for i in range(0, 20):
-            
+        #for i in range(int(augmentation_numbers_for_training[object_category-1])):
+        #for i in range(int(augmentation_numbers_for_validation[object_category-1])):
+        for i in range(20):
             #Type of augmentation
             augmentation = random.randint(0, 2)
             
             #Offset only
-            if augmentation == 0:                                 
+            if augmentation == 0:
+                             
                 aug_annot = Offset2dAnnotation(annot_img, bbox)
                 annotations.append(aug_annot)
                 object_categories.append(object_category)
             #Rotate
             elif augmentation == 1:
-                try:
-                    aug_annot = RotateAnnotation(annot_img, bbox)
-                    annotations.append(aug_annot)
-                    object_categories.append(object_category)
-                except:
-                    print("Rotate Error")
+
+                aug_annot = RotateAnnotation(annot_img, bbox)
+                annotations.append(aug_annot)
+                object_categories.append(object_category)
+
             #Rescale
             elif augmentation == 2:
-                try:
-                    aug_annot = RescaleAnnotation(annot_img, bbox)
-                    annotations.append(aug_annot)
-                    object_categories.append(object_category)
-                except:
-                    print("Scale Error")
-            
-            #if(aug_annot.shape[0] != 100 or aug_annot.shape[1] != 100):
-             #   print("Wrong Size")
+
+                aug_annot = RescaleAnnotation(annot_img, bbox)
+                annotations.append(aug_annot)
+                object_categories.append(object_category)
+
 
 #Hot key encoding of object categories
 

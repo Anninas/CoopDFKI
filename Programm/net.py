@@ -91,10 +91,14 @@ class evaluationCallback(keras.callbacks.Callback):
         print("Starting epoch {}".format(epoch+1))
     def on_epoch_end(self, epoch, log = None):
         global validation_categories
+        #Result of net - exact probabilitites
         result = model.predict(validation_annot_array)
         
+        #Result of net - number giving predicted class
         predicted_result = np.argmax(result, axis=1)
+        #Result of net - binary with one 1
         standartized_predicted_result = standartize(result)
+        #True result - number giving class
         true_result = np.argmax(validation_categories, axis=1)
         
         #Confusion matrix
@@ -113,6 +117,7 @@ class evaluationCallback(keras.callbacks.Callback):
         
         precision = dict()  
         recall = dict()
+        thresholds = dict()
         
         #Category-specific metrics
         for current_category in all_categories:
@@ -123,15 +128,16 @@ class evaluationCallback(keras.callbacks.Callback):
             y_true_aktuell = np.array([np.array_equal(current_category, t) for t in validation_categories], dtype=np.uint8)
             
         
-            #Array of 0s & one 1 showing which predicted results are of the current category
-            #y_pred_aktuell = predicted_results[:, category_number]
-            y_pred_aktuell = np.array([np.array_equal(current_category, t) for t in standartized_predicted_result], dtype=np.uint8)
+            #Result of net - Array of 0s & one 1 showing which specific result is of current category
+            y_pred_aktuell_binary = np.array([np.array_equal(current_category, t) for t in standartized_predicted_result], dtype=np.uint8)
+            #Result of net - exact probabilities for one class
+            y_pred_aktuell = result[:, category_number]
         
             #Calculating values
-            f1_score = metric.f1_score(y_true_aktuell, y_pred_aktuell)
-            #Threshold is missing!!! Include!!!
+            f1_score = metric.f1_score(y_true_aktuell, y_pred_aktuell_binary)
+            
             #Expecting only probabilities for current class as 1-dim vector
-            precision[category_number], recall[category_number], _ = metric.precision_recall_curve(y_true_aktuell, y_pred_aktuell)
+            precision[category_number], recall[category_number], thresholds[category_number] = metric.precision_recall_curve(y_true_aktuell, y_pred_aktuell)
             average_prec = metric.average_precision_score(y_true_aktuell, y_pred_aktuell)
         
             print('F1-Score of class {} is {}'.format(category_number, f1_score))
@@ -183,13 +189,13 @@ x = layers.Flatten()(x)
 predictions = keras.layers.Dense(12, activation='softmax')(x)
 
 #Train model
-opti = keras.optimizers.SGD(lr = 0.001)
+opti = keras.optimizers.Adam(lr = 0.1)
 model = Model(inputs=base_model.input, outputs=predictions)
 model.compile(optimizer = opti, loss = "categorical_crossentropy", metrics=["accuracy"])
 
 print(model.summary())
 
-model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = 128, epochs = 50, callbacks = [evaluationCallback()])
+model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = 32, epochs = 30, callbacks = [evaluationCallback()])
 
 
 #Change number!!! Save net
