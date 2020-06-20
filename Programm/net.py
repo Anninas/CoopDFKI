@@ -23,6 +23,7 @@ import pickle
 import sklearn.metrics as metric
 from itertools import cycle
 
+###GLOBAL VARIABLES
 all_categories = np.array([[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -36,6 +37,9 @@ all_categories = np.array([[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]])
 
+trainResults = {}
+
+###FUNCTION SECTION
 def standartize(input_array):
     
     output_array = []
@@ -87,6 +91,11 @@ def plot_precision_recall_curve(recall, precision):
     plt.show()
 
 class evaluationCallback(keras.callbacks.Callback):
+    
+    def __init__(self, currentBatchSize, currentLearnRate):
+        self.currentBatchSize = currentBatchSize
+        self.currentLearnRate = currentLearnRate
+    
     def on_epoch_begin(self, epoch, log = None):
         print("Starting epoch {}".format(epoch+1))
     def on_epoch_end(self, epoch, log = None):
@@ -114,6 +123,7 @@ class evaluationCallback(keras.callbacks.Callback):
         #F1-Score
         f1 = metric.f1_score(true_result, predicted_result, average = None)
         print("F1-Score is {}".format(f1))
+        trainResults["ADAM: {},{}, Epoch: {}".format(self.currentBatchSize, self.currentLearnRate, epoch)] = f1
         
         precision = dict()  
         recall = dict()
@@ -132,18 +142,33 @@ class evaluationCallback(keras.callbacks.Callback):
             y_pred_aktuell_binary = np.array([np.array_equal(current_category, t) for t in standartized_predicted_result], dtype=np.uint8)
             #Result of net - exact probabilities for one class
             y_pred_aktuell = result[:, category_number]
-        
-            #Calculating values
-            f1_score = metric.f1_score(y_true_aktuell, y_pred_aktuell_binary)
             
             #Expecting only probabilities for current class as 1-dim vector
             precision[category_number], recall[category_number], thresholds[category_number] = metric.precision_recall_curve(y_true_aktuell, y_pred_aktuell)
             average_prec = metric.average_precision_score(y_true_aktuell, y_pred_aktuell)
         
-            print('F1-Score of class {} is {}'.format(category_number, f1_score))
             print('Average Precision of class {} is {}'.format(category_number, average_prec))
 
         plot_precision_recall_curve(recall, precision)
+
+batchSizes = [32, 64, 128, 256]
+learnRates = [0.01, 0.001, 0.0001]
+
+
+def trainNet(model, train_annot_array, train_categories):
+    
+    for batchSize in batchSizes:
+        
+        for learnRate in learnRates:
+
+            #Train model
+            opti = keras.optimizers.Adam(lr = learnRate)
+                
+            model.compile(optimizer = opti, loss = "categorical_crossentropy", metrics=["accuracy"])
+
+            print(model.summary())
+
+            model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = batchSize, epochs = 50, callbacks = [evaluationCallback(batchSize, learnRate)])
 
 ###IMPORT DATASET
 script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
@@ -189,14 +214,16 @@ x = layers.Flatten()(x)
 predictions = keras.layers.Dense(12, activation='softmax')(x)
 
 #Train model
-opti = keras.optimizers.Adam(lr = 0.1)
+#opti = keras.optimizers.Adam(lr = 0.1)
+#model = Model(inputs=base_model.input, outputs=predictions)
+#model.compile(optimizer = opti, loss = "categorical_crossentropy", metrics=["accuracy"])
+
+#print(model.summary())
+
+#model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = 64, epochs = 20, callbacks = [evaluationCallback()])
+
 model = Model(inputs=base_model.input, outputs=predictions)
-model.compile(optimizer = opti, loss = "categorical_crossentropy", metrics=["accuracy"])
-
-print(model.summary())
-
-model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = 32, epochs = 30, callbacks = [evaluationCallback()])
-
+trainNet(model, train_annot_array, train_categories)
 
 #Change number!!! Save net
 net_path = os.path.join(script_dir, "../Netze/try4.h5")
