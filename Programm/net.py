@@ -12,13 +12,9 @@ import os
 import keras
 import numpy as np
 import PIL
-import PIL.ImageOps
 import matplotlib.pyplot as plt
 from keras import layers
 from keras.models import Model
-import cv2
-import random
-import imutils
 import pickle
 import sklearn.metrics as metric
 from itertools import cycle
@@ -90,6 +86,7 @@ def plot_precision_recall_curve(recall, precision):
 
     plt.show()
 
+
 class evaluationCallback(keras.callbacks.Callback):
     
     def __init__(self, currentBatchSize, currentLearnRate):
@@ -98,24 +95,26 @@ class evaluationCallback(keras.callbacks.Callback):
     
     def on_epoch_begin(self, epoch, log = None):
         print("Starting epoch {}".format(epoch+1))
+        
     def on_epoch_end(self, epoch, log = None):
         global validation_categories
+        
         #Result of net - exact probabilitites
         result = model.predict(validation_annot_array)
         
-        #Result of net - number giving predicted class
+        #Result of net - numbers of the predicted classes
         predicted_result = np.argmax(result, axis=1)
-        #Result of net - binary with one 1
+        
+        #Result of net - binary with eleven zeros and one one
         standartized_predicted_result = standartize(result)
-        #True result - number giving class
+        
+        #True result - numbers of the true classes
         true_result = np.argmax(validation_categories, axis=1)
         
         #Confusion matrix
         cm = metric.confusion_matrix(true_result, predicted_result)
         np.set_printoptions(precision=2)
         cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-        #print('Normalized confusion matrix')
-        #print(cm_normalized)
         plt.figure()
         plot_confusion_matrix(cm_normalized, title='Normalized confusion matrix')
 
@@ -134,12 +133,12 @@ class evaluationCallback(keras.callbacks.Callback):
         
             category_number = np.argmax(current_category, axis = 0)    
         
-            #Array of 0s & one 1 showing which true results are of the current category
+            #Array of 0s & one 1 showing which true results are of the current category (1)
             y_true_aktuell = np.array([np.array_equal(current_category, t) for t in validation_categories], dtype=np.uint8)
             
-        
-            #Result of net - Array of 0s & one 1 showing which specific result is of current category
-            y_pred_aktuell_binary = np.array([np.array_equal(current_category, t) for t in standartized_predicted_result], dtype=np.uint8)
+            #Result of net - Array of 0s & one 1 showing if results are of current category (1) or not (0)
+            #y_pred_aktuell_binary = np.array([np.array_equal(current_category, t) for t in standartized_predicted_result], dtype=np.uint8)
+            
             #Result of net - exact probabilities for one class
             y_pred_aktuell = result[:, category_number]
             
@@ -151,27 +150,33 @@ class evaluationCallback(keras.callbacks.Callback):
 
         plot_precision_recall_curve(recall, precision)
 
+
+#Automated training of the net with varying batchSize and learn rate
+        
 batchSizes = [32, 64, 128, 256]
 learnRates = [0.01, 0.001, 0.0001]
-
 
 def trainNet(model, train_annot_array, train_categories):
     
     for batchSize in batchSizes:
         
         for learnRate in learnRates:
-
-            #Train model
+            
+            #Choose optimizer
             opti = keras.optimizers.Adam(lr = learnRate)
-                
+            
+            #Compile model
             model.compile(optimizer = opti, loss = "categorical_crossentropy", metrics=["accuracy"])
 
             print(model.summary())
-
+            
+            #Actual training with callback for evaluation
             model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = batchSize, epochs = 50, callbacks = [evaluationCallback(batchSize, learnRate)])
 
 ###IMPORT DATASET
-script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
+#Get path of the script to work with relative paths later
+script_dir = os.path.dirname(__file__) 
+
 #Get training data
 rel_path_train_annot = "../Flurplandaten/preprocessed__training_annotations.p"
 train_annot_path = os.path.join(script_dir, rel_path_train_annot)
@@ -213,19 +218,23 @@ x = base_model.output
 x = layers.Flatten()(x)
 predictions = keras.layers.Dense(12, activation='softmax')(x)
 
-#Train model
-#opti = keras.optimizers.Adam(lr = 0.1)
-#model = Model(inputs=base_model.input, outputs=predictions)
-#model.compile(optimizer = opti, loss = "categorical_crossentropy", metrics=["accuracy"])
-
-#print(model.summary())
-
-#model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = 64, epochs = 20, callbacks = [evaluationCallback()])
-
 model = Model(inputs=base_model.input, outputs=predictions)
+
+#Train model automatedly while varying hyperparameters
 trainNet(model, train_annot_array, train_categories)
 
-#Change number!!! Save net
+###SAVING RESULTS
+#Convert saved training results (dict of numpy arrays) to dict of lists
+new_trainResults = {}
+for key in trainResults:
+    new_trainResults[key] = trainResults[key].tolist()
+
+#Save training results for evaluation
+new_path = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training.json")
+with open(new_path, 'w') as path:
+    json.dump(new_trainResults, path)
+
+#Save net
 net_path = os.path.join(script_dir, "../Netze/try4.h5")
 
 model.save(net_path)
