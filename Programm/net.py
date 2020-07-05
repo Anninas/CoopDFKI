@@ -15,9 +15,13 @@ import PIL
 import matplotlib.pyplot as plt
 from keras import layers
 from keras.models import Model
+import tensorflow as tf
 import pickle
 import sklearn.metrics as metric
 from itertools import cycle
+
+gpu_options = tf.GPUOptions(allow_growth=True)
+session = tf.InteractiveSession(config=tf.ConfigProto(gpu_options=gpu_options))
 
 ###GLOBAL VARIABLES
 all_categories = np.array([[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -86,6 +90,20 @@ def plot_precision_recall_curve(recall, precision):
 
     plt.show()
 
+def getModel():
+    #Get model
+    #ResNet 50: base_model = keras.applications.resnet50(weights = 'imagenet', include_top = False, classes = 12, input_shape = (100,100,3))
+    #Ggf. vgg19
+    base_model = keras.applications.ResNet50(weights = 'imagenet', include_top = False, classes = 12, input_shape = (100,100,3))
+
+    x = base_model.output
+    x = keras.layers.GlobalAveragePooling2D()(x)
+    x = keras.layers.Dropout(0.7)(x)
+    predictions = keras.layers.Dense(12, activation='softmax')(x)
+    
+    model = Model(inputs=base_model.input, outputs=predictions)
+    
+    return model
 
 class evaluationCallback(keras.callbacks.Callback):
     
@@ -98,6 +116,8 @@ class evaluationCallback(keras.callbacks.Callback):
         
     def on_epoch_end(self, epoch, log = None):
         global validation_categories
+        
+        print("Learn Rate: {}; Batch Size: {}".format(self.currentLearnRate, self.currentBatchSize))
         
         #Result of net - exact probabilitites
         result = model.predict(validation_annot_array)
@@ -122,7 +142,10 @@ class evaluationCallback(keras.callbacks.Callback):
         #F1-Score
         f1 = metric.f1_score(true_result, predicted_result, average = None)
         print("F1-Score is {}".format(f1))
-        trainResults["ADAM: {},{}, Epoch: {}".format(self.currentBatchSize, self.currentLearnRate, epoch)] = f1
+        
+        #Save results only for automated training
+        if(train_mode == "Y"):
+            trainResults["SGD: {},{}, Epoch: {}".format(self.currentBatchSize, self.currentLearnRate, epoch)] = f1
         
         precision = dict()  
         recall = dict()
@@ -154,21 +177,27 @@ class evaluationCallback(keras.callbacks.Callback):
 #Automated training of the net with varying batchSize and learn rate
         
 batchSizes = [32, 64, 128, 256]
-learnRates = [0.01, 0.001, 0.0001]
+learnRates = [0.1, 0.01, 0.001, 0.0001]
 
-def trainNet(model, train_annot_array, train_categories):
+def trainNet(train_annot_array, train_categories):
+    
+    global model
     
     for batchSize in batchSizes:
         
         for learnRate in learnRates:
+                      
+            #Reinstantiate model
+            model = getModel()
             
             #Choose optimizer
-            opti = keras.optimizers.Adam(lr = learnRate)
+            opti = keras.optimizers.SGD(lr = learnRate)
             
             #Compile model
             model.compile(optimizer = opti, loss = "categorical_crossentropy", metrics=["accuracy"])
 
             print(model.summary())
+            print("We have batch size {} and learn rate {}".format(batchSize, learnRate))
             
             #Actual training with callback for evaluation
             model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = batchSize, epochs = 50, callbacks = [evaluationCallback(batchSize, learnRate)])
@@ -211,30 +240,39 @@ test_annot_array = np.reshape(test_annot, (test_annot.shape[0], 100, 100, 3))
 test_categories = pickle.load(open(test_categories_path, 'rb'))
 
 ###TRAINING
-#Get model
-base_model = keras.applications.InceptionV3(weights = 'imagenet', include_top = False, classes = 12, input_shape = (100,100,3))
+#Ask if training should be automated
+train_mode = input("Do you want to train automatedly? Y/N: ")
 
-x = base_model.output
-x = layers.Flatten()(x)
-predictions = keras.layers.Dense(12, activation='softmax')(x)
+if(train_mode == "Y"):
+    
+    print("Automated training is started.")
+    
+    #Train model automatedly while varying hyperparameters
+    trainNet(train_annot_array, train_categories)
+    
+    #Convert saved training results (dict of numpy arrays) to dict of lists
+    new_trainResults = {}
+    for key in trainResults:
+            new_trainResults[key] = trainResults[key].tolist()
 
-model = Model(inputs=base_model.input, outputs=predictions)
+    #Save training results for evaluation
+    new_path = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_2.json")
+    with open(new_path, 'w') as path:
+            json.dump(new_trainResults, path)
 
-#Train model automatedly while varying hyperparameters
-trainNet(model, train_annot_array, train_categories)
+else:
+    #Train model non-automatedly
+    batchSize = int(input("You want to train non-automatedly. Enter batch size:"))
+    learnRate = float(input("Now enter the learn rate:"))
+    epochs = int(input("How many epochs do you want to train?"))
+    opti = keras.optimizers.SGD(lr = learnRate)
 
-###SAVING RESULTS
-#Convert saved training results (dict of numpy arrays) to dict of lists
-new_trainResults = {}
-for key in trainResults:
-    new_trainResults[key] = trainResults[key].tolist()
-
-#Save training results for evaluation
-new_path = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training.json")
-with open(new_path, 'w') as path:
-    json.dump(new_trainResults, path)
+    model = getModel()
+    model.compile(optimizer = opti, loss = "categorical_crossentropy", metrics=["accuracy"])
+    print(model.summary())
+    model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = batchSize, epochs = epochs, callbacks = [evaluationCallback(batchSize, learnRate)])
 
 #Save net
-net_path = os.path.join(script_dir, "../Netze/try4.h5")
+net_path = os.path.join(script_dir, "../Netze/try6.h5")
 
 model.save(net_path)
