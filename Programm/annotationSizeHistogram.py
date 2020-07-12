@@ -4,16 +4,28 @@ Created on Tue Mar 10 13:06:52 2020
 
 @author: anni
 """
+import os
+import json
 import matplotlib.pyplot as plt
-from addSlicingSymbols import annotations
+
+script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
+rel_path = "../Flurplandaten/floorplan_metadata_cleaned_nobidet.json"
+metadata_path = os.path.join(script_dir, rel_path)
+
+#Load json file    
+metadata = json.loads(open(metadata_path, 'r').read())
 
 numrows = []
 numcolumns = []
 
-for array in annotations:
-    numrows.append(array.shape[0])
-    numcolumns.append(array.shape[1])
-
+for annotation in metadata['annotations']:
+    
+    numrow = annotation['bbox'][3]
+    numcolumn = annotation['bbox'][2]
+    
+    numrows.append(numrow)
+    numcolumns.append(numcolumn)
+'''
 counts, edges, plot = plt.hist(numrows, bins=[0, 10, 30, 50, 100, 200, 300, 400, 500,600])
 print("Rows:")
 print(counts)
@@ -27,6 +39,7 @@ print("200-300: " + str(counts[5]))
 print("300-400: " + str(counts[6]))
 print("400-500: " + str(counts[7]))
 print("500-600: " + str(counts[8]))
+'''
 
 counts2, edges2, plot2 = plt.hist(numcolumns, bins=[0, 10, 30, 50, 100, 200, 300, 400, 500,600])
 print("Columns:")

@@ -184,13 +184,13 @@ def HotKeyEncode(int_list, num_categories):
 
 
 ###START LOADING DATA
-training_annotations_per_category = [185, 67, 70, 318, 9, 161, 381, 46, 77, 145, 63, 78]
+training_annotations_per_category = [185, 67, 70, 318, 161, 381, 46, 77, 145, 63, 78]
 augmentation_numbers_for_training = getNormalizedNumbersOfAugmentation(training_annotations_per_category)
-validation_annotations_per_category = [182, 60, 61, 313, 7, 123, 296, 48, 97, 107, 39, 66]
+validation_annotations_per_category = [182, 60, 61, 313, 123, 296, 48, 97, 107, 39, 66]
 augmentation_numbers_for_validation = getNormalizedNumbersOfAugmentation(validation_annotations_per_category)
   
 script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
-rel_path = "../Flurplandaten/floorplan_metadata_cleaned.json"
+rel_path = "../Flurplandaten/floorplan_metadata_cleaned_nobidet.json"
 metadata_path = os.path.join(script_dir, rel_path)
 
 #Load json file    
@@ -274,7 +274,7 @@ for annot in metadata['annotations']:
         #Create 20 varied Verions of this Annotation        
         #for i in range(int(augmentation_numbers_for_training[object_category-1])):
         #for i in range(int(augmentation_numbers_for_validation[object_category-1])):
-        for i in range(20):
+        '''for i in range(20):
             #Type of augmentation
             augmentation = random.randint(0, 2)
             
@@ -298,7 +298,7 @@ for annot in metadata['annotations']:
                 annotations.append(aug_annot)
                 object_categories.append(object_category)
 
-
+        '''
 #Hot key encoding of object categories
 
         
@@ -306,12 +306,12 @@ for annot in metadata['annotations']:
 #https://stackoverflow.com/questions/30698004/how-can-i-serialize-a-numpy-array-while-preserving-matrix-dimensions
 
 script_dir = os.path.dirname(__file__)
-annotation_path = os.path.join(script_dir, "../Flurplandaten/preprocessed__validation_annotations.p")
+annotation_path = os.path.join(script_dir, "../Flurplandaten/preprocessed__validation_annotations_nobidet_noaugmentation.p")
 pickle.dump(annotations, open(annotation_path, "wb"))
 
-object_categories_encoded = HotKeyEncode(object_categories, 12)
+object_categories_encoded = HotKeyEncode(object_categories, 11)
 
-object_path = os.path.join(script_dir, "../Flurplandaten/object_list_for_validation_annotations.p")
+object_path = os.path.join(script_dir, "../Flurplandaten/object_list_for_validation_annotations_nobidet_noaugmentation.p")
 pickle.dump(object_categories_encoded, open(object_path, "wb"))
 
 ###END PREPROCESSING 
