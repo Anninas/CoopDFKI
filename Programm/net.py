@@ -23,19 +23,21 @@ from itertools import cycle
 gpu_options = tf.GPUOptions(allow_growth=True)
 session = tf.InteractiveSession(config=tf.ConfigProto(gpu_options=gpu_options))
 
+new_path = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_8_nobidet_Res50.json")
+
+
 ###GLOBAL VARIABLES
-all_categories = np.array([[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-                           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]])
+all_categories = np.array([[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                           [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+                           [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+                           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]])
 
 trainResults = {}
 
@@ -45,7 +47,7 @@ def standartize(input_array):
     output_array = []
     
     for array in input_array:
-        output_part = np.zeros(12)
+        output_part = np.zeros(11)
         highest = np.argmax(array, axis = 0)
         output_part[highest] = 1
         output_array.append(output_part)
@@ -57,9 +59,9 @@ def plot_confusion_matrix(cm, title='Confusion matrix', cmap=plt.cm.Blues):
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title(title)
     plt.colorbar()
-    tick_marks = np.arange(12)
-    plt.xticks(tick_marks, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], rotation=45)
-    plt.yticks(tick_marks, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+    tick_marks = np.arange(11)
+    plt.xticks(tick_marks, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], rotation=45)
+    plt.yticks(tick_marks, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
@@ -73,7 +75,7 @@ def plot_precision_recall_curve(recall, precision):
     lines = []
     labels = []
         
-    for i, color in zip(range(12), colors):
+    for i, color in zip(range(11), colors):
         l, = plt.plot(recall[i], precision[i], color=color, lw=2)
         lines.append(l)
         labels.append('Precision-recall for class {0} '.format(i))
@@ -94,16 +96,18 @@ def getModel():
     #Get model
     #ResNet 50: base_model = keras.applications.resnet50(weights = 'imagenet', include_top = False, classes = 12, input_shape = (100,100,3))
     #Ggf. vgg19
-    base_model = keras.applications.ResNet50(weights = 'imagenet', include_top = False, classes = 12, input_shape = (100,100,3))
-
+    #InceptionResnetV2
+    base_model = keras.applications.ResNet50(weights = 'imagenet', include_top = False, classes = 11, input_shape = (100,100,3))
     x = base_model.output
     x = keras.layers.GlobalAveragePooling2D()(x)
     x = keras.layers.Dropout(0.7)(x)
-    predictions = keras.layers.Dense(12, activation='softmax')(x)
+    predictions = keras.layers.Dense(11, activation='softmax')(x)
     
     model = Model(inputs=base_model.input, outputs=predictions)
     
     return model
+
+error_path = os.path.join(os.path.dirname(__file__),"../Flurplandaten/FalsePredictions")
 
 class evaluationCallback(keras.callbacks.Callback):
     
@@ -131,6 +135,17 @@ class evaluationCallback(keras.callbacks.Callback):
         #True result - numbers of the true classes
         true_result = np.argmax(validation_categories, axis=1)
         
+        #Get all annotations that were not predicted correctly to find pattern
+        mask = predicted_result==true_result
+        
+        current_error_path = os.path.join(error_path, "{},{},{}".format(self.currentBatchSize, self.currentLearnRate, epoch))
+        if(not os.path.exists(current_error_path)):
+            os.makedirs(current_error_path)
+        
+        for number, annotation in enumerate(validation_annot_array[~mask]):
+            plt.imsave(os.path.join(current_error_path, "wrong_annotation{}.png".format(number)), annotation)
+            print(current_error_path)
+        
         #Confusion matrix
         cm = metric.confusion_matrix(true_result, predicted_result)
         np.set_printoptions(precision=2)
@@ -145,7 +160,11 @@ class evaluationCallback(keras.callbacks.Callback):
         
         #Save results only for automated training
         if(train_mode == "Y"):
-            trainResults["SGD: {},{}, Epoch: {}".format(self.currentBatchSize, self.currentLearnRate, epoch)] = f1
+                
+            #Save training results for evaluation
+            with open(new_path, 'w') as path:
+                trainResults["SGD: {},{}, Epoch: {}".format(self.currentBatchSize, self.currentLearnRate, epoch)] = f1.tolist()
+                json.dump(trainResults, path)
         
         precision = dict()  
         recall = dict()
@@ -200,17 +219,17 @@ def trainNet(train_annot_array, train_categories):
             print("We have batch size {} and learn rate {}".format(batchSize, learnRate))
             
             #Actual training with callback for evaluation
-            model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = batchSize, epochs = 50, callbacks = [evaluationCallback(batchSize, learnRate)])
-
+            model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = batchSize, epochs = 50, callbacks = [evaluationCallback(batchSize, learnRate)]) 
+    
 ###IMPORT DATASET
 #Get path of the script to work with relative paths later
 script_dir = os.path.dirname(__file__) 
 
 #Get training data
-rel_path_train_annot = "../Flurplandaten/preprocessed__training_annotations.p"
+rel_path_train_annot = "../Flurplandaten/preprocessed__training_annotations_nobidet.p"
 train_annot_path = os.path.join(script_dir, rel_path_train_annot)
 
-rel_path_train_categories = "../Flurplandaten/object_list_for_training_annotations.p"
+rel_path_train_categories = "../Flurplandaten/object_list_for_training_annotations_nobidet.p"
 train_categories_path = os.path.join(script_dir, rel_path_train_categories)
 
 train_annot = np.array(pickle.load(open(train_annot_path, 'rb')))
@@ -218,10 +237,10 @@ train_annot_array = np.reshape(train_annot, (train_annot.shape[0], 100, 100, 3))
 train_categories = pickle.load(open(train_categories_path, 'rb'))
 
 #Get validation data
-rel_path_validation_annot = "../Flurplandaten/preprocessed__validation_annotations.p"
+rel_path_validation_annot = "../Flurplandaten/preprocessed__validation_annotations_nobidet_noaugmentation.p"
 validation_annot_path = os.path.join(script_dir, rel_path_validation_annot)
 
-rel_path_validation_categories = "../Flurplandaten/object_list_for_validation_annotations.p"
+rel_path_validation_categories = "../Flurplandaten/object_list_for_validation_annotations_nobidet_noaugmentation.p"
 validation_categories_path = os.path.join(script_dir, rel_path_validation_categories)
 
 validation_annot = np.array(pickle.load(open(validation_annot_path, 'rb')))
@@ -249,16 +268,6 @@ if(train_mode == "Y"):
     
     #Train model automatedly while varying hyperparameters
     trainNet(train_annot_array, train_categories)
-    
-    #Convert saved training results (dict of numpy arrays) to dict of lists
-    new_trainResults = {}
-    for key in trainResults:
-            new_trainResults[key] = trainResults[key].tolist()
-
-    #Save training results for evaluation
-    new_path = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_2.json")
-    with open(new_path, 'w') as path:
-            json.dump(new_trainResults, path)
 
 else:
     #Train model non-automatedly
@@ -273,6 +282,6 @@ else:
     model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = batchSize, epochs = epochs, callbacks = [evaluationCallback(batchSize, learnRate)])
 
 #Save net
-net_path = os.path.join(script_dir, "../Netze/try6.h5")
+net_path = os.path.join(script_dir, "../Netze/try9_Res50.h5")
 
 model.save(net_path)

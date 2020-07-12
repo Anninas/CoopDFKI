@@ -27,6 +27,7 @@ parts/
 sdist/
 var/
 wheels/
+FalsePredictions/
 pip-wheel-metadata/
 share/python-wheels/
 *.egg-info/
