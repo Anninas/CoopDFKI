@@ -72,22 +72,24 @@ for ie in metadata['images']:
 ###START ACTUAL CLEANING
 n = 0        
 
+#Check all annotations
 while n < len(metadata['annotations']):
     
     image_id = metadata['annotations'][n]['image_id']
     
+    #Check if image exists
     if image_id in imgs_idtoind:
-    
+        
+        #Get image data
         bbox = metadata['annotations'][n]['bbox']
         img_width = metadata['images'][imgs_idtoind[image_id]]['width']
         img_height = metadata['images'][imgs_idtoind[image_id]]['height']
     
-    
-        #Achtung, ändern: Nicht die obere linke Ecke prüfen, sondern die rechte untere!!!
-    
+        #Delete image if it is larger than 100*100 or smaller than 10*10 or if it is too close to the edges of the floorplan
         if (bbox[3] < 10) or (bbox[2] < 10) or (bbox[3] > 100) or (bbox[2] > 100) or (img_height < (bbox[1] + bbox[3])) or (img_height < bbox[3])or (img_width < (bbox[0]+bbox[2])) or (img_width < bbox[2]):       
             del metadata['annotations'][n]
         
+        #Overwrite all bidets as toilets and let other classes follow one down
         if(metadata['annotations'][n]['category_id'] == 5):
             metadata['annotations'][n]['category_id'] = 1
         elif(metadata['annotations'][n]['category_id']>5):
@@ -96,6 +98,7 @@ while n < len(metadata['annotations']):
 
 x = 0
 
+#Delete bidet class, let other classes follow one down
 while x < len(metadata['categories']):
     if(metadata['categories'][x]['id'] == 5):
         del metadata['categories'][x]
@@ -108,8 +111,7 @@ print(metadata['categories'])
     
 ###END CLEANING
 
-###WRITE INTO FILE
-    
+###WRITE INTO FILE AND SAVE  
 with open(new_path, 'w') as f:
         json.dump(metadata, f)
 

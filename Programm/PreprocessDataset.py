@@ -111,14 +111,14 @@ def RotateAnnotation(img, bound):
         rot_img = Offset2dAnnotation(img, bound)
     
     #Get the angle (*45°) to rotate the image with
-    angle = random.randint(1, 7)
+    angle = random.randint(1, 360)
     
     #Save the original scale of the image (in case it was not 100x100)
     orig_height = rot_img.shape[0]
     orig_width = rot_img.shape[1]
     
     #Rotate the image
-    rotated = invert(imutils.rotate_bound(invert(rot_img), angle*45))
+    rotated = invert(imutils.rotate_bound(invert(rot_img), angle))
     
     #Crop the image back to 100*100
     y1 = int(abs((rotated.shape[0]-orig_height)/2))
@@ -203,7 +203,7 @@ imgs = []
 imgs_nametoind = {}
 
 #Path for accessing images
-rel_path = "../Flurplandaten/images_diagonals"
+rel_path = "../Flurplandaten/images_roundings"
 path = os.path.join(script_dir, rel_path)
 
 #Counter to get index of image
@@ -270,11 +270,9 @@ for annot in metadata['annotations']:
         annotations.append(StandardAnnotation(annot_img, bbox))
         object_categories.append(object_category)
         
-        
-        #Create 20 varied Verions of this Annotation        
-        #for i in range(int(augmentation_numbers_for_training[object_category-1])):
-        #for i in range(int(augmentation_numbers_for_validation[object_category-1])):
-        '''for i in range(20):
+        '''
+        #Create 20 varied Verions of this Annotation (only for training annotations, otherwise comment)
+        for i in range(20):
             #Type of augmentation
             augmentation = random.randint(0, 2)
             
@@ -297,8 +295,8 @@ for annot in metadata['annotations']:
                 aug_annot = RescaleAnnotation(annot_img, bbox)
                 annotations.append(aug_annot)
                 object_categories.append(object_category)
-
         '''
+
 #Hot key encoding of object categories
 
         
@@ -306,12 +304,12 @@ for annot in metadata['annotations']:
 #https://stackoverflow.com/questions/30698004/how-can-i-serialize-a-numpy-array-while-preserving-matrix-dimensions
 
 script_dir = os.path.dirname(__file__)
-annotation_path = os.path.join(script_dir, "../Flurplandaten/preprocessed__validation_annotations_nobidet_noaugmentation.p")
+annotation_path = os.path.join(script_dir, "../Flurplandaten/preprocessed__test_annotations_nobidet.p")
 pickle.dump(annotations, open(annotation_path, "wb"))
 
 object_categories_encoded = HotKeyEncode(object_categories, 11)
 
-object_path = os.path.join(script_dir, "../Flurplandaten/object_list_for_validation_annotations_nobidet_noaugmentation.p")
+object_path = os.path.join(script_dir, "../Flurplandaten/object_list_for_test_annotations_nobidet.p")
 pickle.dump(object_categories_encoded, open(object_path, "wb"))
 
 ###END PREPROCESSING 
