@@ -7,6 +7,8 @@ preprocessed_annotations.json
 preprocessed_annotations.zip
 preprocessed_annotations.p
 object_list_for_annotations.json
+predictions.json
+predictions.npy
 
 # C extensions
 *.so

@@ -33,12 +33,19 @@ floorplan_path = os.path.join(script_dir, "../Flurplandaten/images/{}".format(fl
 floorplan = np.array(PIL.Image.open(floorplan_path).convert('L').convert('RGB'))
 
 net_path = os.path.join(script_dir, "../Netze/try10_IncResV2_randomrotation.h5")
+print("Loading model now...")
 net = keras.models.load_model(net_path)
-
+print("Loading model done")
 
 predictions = np.empty((floorplan.shape[0], floorplan.shape[1], 11))
 annotations = []
+
+batch_size = 8192
+
 counter = 0
+large_counter = ((floorplan.shape[0]-100) * (floorplan.shape[1]-100))/batch_size
+
+print("Starting prediction loop...")
 
 for y in range(floorplan.shape[0]-100):
     for x in range(floorplan.shape[1]-100):
@@ -53,16 +60,23 @@ for y in range(floorplan.shape[0]-100):
         
         counter += 1
         
-        if(counter == 1024):
+        if((counter == batch_size) or ((x == floorplan.shape[1]-101) and (y == floorplan.shape[0]-101))):
             
+            print("Predicting now...")
             #predict takes np.array, no list!
-            prediction = np.array(net.predict(np.array(annotations))[0])
-            
-            for i in range(len(prediction)):
-                x_i = ((initial_x + i)%(floorplan.shape[1]-100))+50
+            prediction = net.predict(np.array(annotations))
+            print("Prediction done")
+            for i in range(prediction.shape[0]):
+                x_i = ((initial_x + i)%(floorplan.shape[1]-100))+50 
                 y_i = initial_y + ((initial_x + i)//(floorplan.shape[0]-100))+50
                 
                 predictions[y_i][x_i]=prediction[i]
+                #print("current prediction = {}".format(prediction[i]))
+                #print("saved current prediction = {}".format(predictions[y_i][x_i]))
+            
+            large_counter -= 1
+            
+            print("{} steps left".format(large_counter))
             
             counter = 0
             annotations.clear()
