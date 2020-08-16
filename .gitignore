@@ -133,3 +133,5 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+Programm/predictions.json
+Programm/predictions.npy
