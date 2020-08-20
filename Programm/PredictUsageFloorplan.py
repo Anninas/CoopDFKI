@@ -24,6 +24,7 @@ import pickle
 import sklearn.metrics as metric
 from itertools import cycle
 import pandas as pd
+import time
 
 script_dir = os.path.dirname(__file__)
 
@@ -40,12 +41,15 @@ print("Loading model done")
 predictions = np.empty((floorplan.shape[0], floorplan.shape[1], 11))
 annotations = []
 
-batch_size = 8192
+batch_size = 2048
 
 counter = 0
 large_counter = ((floorplan.shape[0]-100) * (floorplan.shape[1]-100))/batch_size
 
 print("Starting prediction loop...")
+
+start = time.time()
+print("Timer started")
 
 for y in range(floorplan.shape[0]-100):
     for x in range(floorplan.shape[1]-100):
@@ -62,13 +66,13 @@ for y in range(floorplan.shape[0]-100):
         
         if((counter == batch_size) or ((x == floorplan.shape[1]-101) and (y == floorplan.shape[0]-101))):
             
-            print("Predicting now...")
+            #print("Predicting now...")
             #predict takes np.array, no list!
-            prediction = net.predict(np.array(annotations))
-            print("Prediction done")
+            prediction = net.predict_on_batch(np.array(annotations))
+            #print("Prediction done")
             for i in range(prediction.shape[0]):
                 x_i = ((initial_x + i)%(floorplan.shape[1]-100))+50 
-                y_i = initial_y + ((initial_x + i)//(floorplan.shape[0]-100))+50
+                y_i = initial_y + ((initial_x + i)//(floorplan.shape[1]-100))+50
                 
                 predictions[y_i][x_i]=prediction[i]
                 #print("current prediction = {}".format(prediction[i]))
@@ -76,12 +80,15 @@ for y in range(floorplan.shape[0]-100):
             
             large_counter -= 1
             
-            print("{} steps left".format(large_counter))
+            #print("{} steps left".format(large_counter))
             
             counter = 0
             annotations.clear()
         
 
+end = time.time()
+
+print("Time for prediction loop: {}".format(end-start))
 
 with open('predictions.json', 'w')as file:
     json.dump(predictions.tolist(), file)
