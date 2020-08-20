@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Jun 21 17:51:44 2020
+Created on Thu Aug 20 12:31:18 2020
 
 @author: anni
 """
@@ -41,54 +41,31 @@ print("Loading model done")
 predictions = np.empty((floorplan.shape[0], floorplan.shape[1], 11))
 annotations = []
 
-batch_size = 4096
-
-counter = 0
-large_counter = ((floorplan.shape[0]-100) * (floorplan.shape[1]-100))/batch_size
-
 print("Starting prediction loop...")
-
-start = time.time()
-print("Timer started")
 
 for y in range(floorplan.shape[0]-100):
     for x in range(floorplan.shape[1]-100):
-    
-        
-        if(counter == 0):
-            initial_x = x
-            initial_y = y
         
         curr_annot = floorplan[y:(y+100), x:(x+100)]
         annotations.append(curr_annot)
-        
-        counter += 1
-        
-        if((counter == batch_size) or ((x == floorplan.shape[1]-101) and (y == floorplan.shape[0]-101))):
-            
-            #print("Predicting now...")
-            #predict takes np.array, no list!
-            prediction = net.predict_on_batch(np.array(annotations))
-            #print("Prediction done")
-            for i in range(prediction.shape[0]):
-                x_i = ((initial_x + i)%(floorplan.shape[1]-100))+50 
-                y_i = initial_y + ((initial_x + i)//(floorplan.shape[1]-100))+50
-                
-                predictions[y_i][x_i]=prediction[i]
-                #print("current prediction = {}".format(prediction[i]))
-                #print("saved current prediction = {}".format(predictions[y_i][x_i]))
-            
-            large_counter -= 1
-            
-            #print("{} steps left".format(large_counter))
-            
-            counter = 0
-            annotations.clear()
-        
 
+start = time.time()
+print("Timer started")                  
+#print("Predicting now...")
+#predict takes np.array, no list!
+prediction = net.predict_on_batch(np.array(annotations))
+#print("Prediction done")
 end = time.time()
 
 print("Time for prediction loop: {}".format(end-start))
+
+for i in range(prediction.shape[0]):
+    x_i = ((0 + i)%(floorplan.shape[1]-100))+50 
+    y_i = 0 + ((0 + i)//(floorplan.shape[1]-100))+50
+    
+    predictions[y_i][x_i]=prediction[i]
+    #print("current prediction = {}".format(prediction[i]))
+    #print("saved current prediction = {}".format(predictions[y_i][x_i]))
 
 with open('predictions.json', 'w')as file:
     json.dump(predictions.tolist(), file)
