@@ -92,6 +92,7 @@ print("Time for prediction loop: {}".format(end-start))
 
 with open('predictions.json', 'w')as file:
     json.dump(predictions.tolist(), file)
+    
 np.save('predictions.npy', predictions)
 #started 15:01
 
