@@ -30,8 +30,8 @@ import copy
 from GetMaskSizesForNonMaximumSuppression import results
 
 #Get from other script, sizes of masks for non max supression (60% of average sizeof symbols)
-mask_sizes_x = [int(results["class"+str(x)+"width"]*(6/10)) for x in range(11)]
-mask_sizes_y = [int(results["class"+str(y)+"height"]*(6/10)) for y in range(11)]
+mask_sizes_x = [int(results["class"+str(x)+"width"]*(6/10)) for x in range(12)]
+mask_sizes_y = [int(results["class"+str(y)+"height"]*(6/10)) for y in range(12)]
 
 #Import prediction to post process
 script_dir = os.path.dirname(__file__)

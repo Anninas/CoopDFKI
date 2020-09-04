@@ -33,7 +33,7 @@ metadata = json.loads(open(metadata_path, 'r').read())
 
 results = {}
 
-for i in range(11):
+for i in range(12):
     results["class" + str(i)+"height"]=[]
     results["class" + str(i)+"width"]=[]
 
@@ -45,6 +45,6 @@ for annotation in metadata["annotations"]:
     except KeyError:
         print("Image not available -> wrong indexing")
    
-for i in range(11):
+for i in range(12):
     results["class" + str(i)+"height"]=np.average(results["class" + str(i)+"height"])
     results["class" + str(i)+"width"]=np.average(results["class" + str(i)+"width"])
