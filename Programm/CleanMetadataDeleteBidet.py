@@ -93,7 +93,7 @@ while n < len(metadata['annotations']):
         if(metadata['annotations'][n]['category_id'] == 5):
             metadata['annotations'][n]['category_id'] = 1
         elif(metadata['annotations'][n]['category_id']>5):
-            metadata['annotations'][n]['category_id'] = metadata['annotations'][n]['category_id'] - 1
+            metadata['annotations'][n]['category_id'] = (metadata['annotations'][n]['category_id'] - 1)
     n += 1
 
 x = 0
