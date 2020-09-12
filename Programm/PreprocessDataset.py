@@ -80,6 +80,7 @@ def Offset2dAnnotation(img, bound):
     corner_100x100_no_offset_y = int(((bound[1])) - (100 - bound[3])/2)
     
     #Get offset (min half annotation should be still in 100x100)
+    '''Lower value to test if it works better'''
     offset_x = random.randint(-50, 50)
     offset_y = random.randint(-50, 50)
     

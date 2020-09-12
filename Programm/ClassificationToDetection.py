@@ -38,6 +38,10 @@ script_dir = os.path.dirname(__file__)
 with open(os.path.join(script_dir, "predictions1.json"), 'r') as file:
     initial_prediction = np.asarray(json.load(file))
 
+
+
+
+
 #Add something like argmax if threshold smaller 0.5 bc there could be two probs of same height or a higher one    
 threshold = 0.8
 #Replace all prediction values below threshold by 0
@@ -74,37 +78,43 @@ for i in range(initial_prediction.shape[2]):
     floorplan1.paste(class_predictions["class"+str(i)], (0,0), class_predictions["class"+str(i)])
     floorplan1.save(os.path.join(script_dir, "./Kontrollbilder/{}".format(image_name)))
 
+
+
+
+
 #Maxima in lists
 non_max_results_list = {}
 non_max_results_images = {}
 
 #Save a copy of the arrays to modify in Non-Max-Supression
 class_predictions_nonmax = copy.deepcopy(class_predictions_arrays)
- 
+
 #Non-Max-Supression loop
 for z in range(initial_prediction.shape[2]):
     
     #Mask iteration
-    for x in range(initial_prediction.shape[0]-mask_sizes_x[z]):
-        for y in range(initial_prediction.shape[1]-mask_sizes_y[z]):
+    for y in range(initial_prediction.shape[0]-mask_sizes_y[z]+1):
+        for x in range(initial_prediction.shape[1]-mask_sizes_x[z]+1):
             
             #Slice current mask from prediction
-            current_mask = class_predictions_nonmax["class"+str(z)][x:x+mask_sizes_x[z], y:y+mask_sizes_y[z]]
+            current_mask = class_predictions_nonmax["class"+str(z)][y:y+mask_sizes_y[z], x:x+mask_sizes_x[z]]
             #Delete all values except for max
             current_mask[current_mask < np.max(current_mask)] = 0
+            #if 0 < np.max(current_mask) < 0.8: print(np.max(current_mask))
             #Set prediction to current mask to use it for further non max
-            class_predictions_nonmax["class"+str(z)][x:x+mask_sizes_x[z], y:y+mask_sizes_y[z]] = current_mask
+            class_predictions_nonmax["class"+str(z)][y:y+mask_sizes_y[z], x:x+mask_sizes_x[z]] = current_mask
+            #if 0 < np.max(class_predictions_nonmax["class"+str(z)][y:y+mask_sizes_y[z], x:x+mask_sizes_x[z]]) < 0.8: print(np.max(class_predictions_nonmax["class"+str(z)][y:y+mask_sizes_y[z], x:x+mask_sizes_x[z]]))
     
     #Save results of non max as list
-    non_max_results_list["class"+str(z)] = np.where(class_predictions_nonmax["class"+str(z)] > 0)
+    non_max_results_list["class"+str(z)] = np.where(class_predictions_nonmax["class"+str(z)] > threshold)
     
     #Sabe results of non max as images and paste on top of floorplan for controll
     floorplan2 = PIL.Image.open(os.path.join(script_dir, "../Flurplandaten/images/001.png")).convert('L').convert('RGB')
-    non_max_image = np.zeros((floorplan2.size[0], floorplan2.size[1], 4))
+    non_max_image = np.zeros((floorplan2.size[1], floorplan2.size[0], 4))
     
     for i in range(len(non_max_results_list["class"+str(z)][0])):
-        non_max_image[non_max_results_list["class"+str(z)][1][i], non_max_results_list["class"+str(z)][0][i], 0] = 1
-        non_max_image[non_max_results_list["class"+str(z)][1][i], non_max_results_list["class"+str(z)][0][i], 3] = 1
+        non_max_image[non_max_results_list["class"+str(z)][0][i], non_max_results_list["class"+str(z)][1][i], 0] = 1
+        non_max_image[non_max_results_list["class"+str(z)][0][i], non_max_results_list["class"+str(z)][1][i], 3] = 1
     
     non_max_results_images["class"+str(z)] = PIL.Image.fromarray((non_max_image * 255).astype('uint8'), mode='RGBA')
     

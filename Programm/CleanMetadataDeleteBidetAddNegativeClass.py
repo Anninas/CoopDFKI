@@ -117,15 +117,17 @@ while x < len(metadata['categories']):
 metadata['categories'].append({'id':12, 'name':"negative", 'supercategory':None})
 
 print("Done")
-   
+###END ACTUAL CLEANING 
+
+
+###START CREATION OF NEGATIVE ANNOTATIONS
 print("Creating negative annotations...")
 
-empty = np.zeros((100, 100))
 counter = 0
-
+#Loop through all images for creation of negative annotations
 for image in metadata['images']:
     
-    
+    #Counter of images
     print("{}/{}".format(counter, len(metadata['images'])))
     
     #Check if image exists
@@ -133,11 +135,15 @@ for image in metadata['images']:
         
         img = imgs[imgs_idtoind[image['id']]]
         
+        #Create the empty annotation mask for the image
         mask = np.zeros((img.shape))
         
+        #Loop over all annotations
         for annotation in metadata['annotations']:
+            #Get the annotations that go with the current image
             if(annotation['image_id'] == image['id']):
                 
+                #Get the info on the location and size of the annotation
                 width = int(annotation['bbox'][2])
                 height = int(annotation['bbox'][3])
                 x_min = int(annotation['bbox'][0])
@@ -145,7 +151,9 @@ for image in metadata['images']:
                 y_min = int(annotation['bbox'][1])
                 y_max = y_min + height
                 
-                #try:
+                
+                ##try:
+                #Set the area of the mask to one where on the image the annotation can be found
                 mask[y_min:y_max, x_min:x_max] = np.ones((height, width))
                 '''    
                 except ValueError:
@@ -155,25 +163,32 @@ for image in metadata['images']:
                     except ValueError:
                         print("Out of bounds")
                '''
-        x = 0
-        y = 0
+     
         
-        while(y < mask.shape[1]-100):
-            while(x < mask.shape[0]-100):
-                if not 1 in mask[y:y+100, x:x+100]:
-                    metadata['annotations'].append({'bbox':[x, y, 100, 100], 'category_id':12, 'id':(metadata['annotations'][len(metadata['annotations'])-1]['id']+1), 'image_id': image['id']})
-                    print(metadata['annotations'][len(metadata['annotations'])-1])
-                    x+=100
-                    y+=100
-                x+=1
-            y+=1
+        #Eight negative annotations per image, random position
+        number = 0
+        while(number<8):
+            
+            #Get random position
+            x = random.randint(0, mask.shape[0]-100)                
+            y = random.randint(0, mask.shape[1]-100)
+            
+            #Check if that position interferes with an annotation
+            if not 1 in mask[y:y+100, x:x+100]:
+                #If no annotations in the current position area
+                #Save this as a negative annotations
+                metadata['annotations'].append({'bbox':[x, y, 100, 100], 'category_id':12, 'id':(metadata['annotations'][len(metadata['annotations'])-1]['id']+1), 'image_id': image['id']})
+                print(metadata['annotations'][len(metadata['annotations'])-1])
+                #Set number one up
+                number += 1
+
     counter +=1
     
     
 print("Done")
 
 print(metadata['categories'])    
-###END CLEANING
+###END CREATION OF NEGATIVE ANNOTATIONS
 
 ###WRITE INTO FILE AND SAVE  
 with open(new_path, 'w') as f:

@@ -29,8 +29,8 @@ session = tf.InteractiveSession(config=tf.ConfigProto(gpu_options=gpu_options))
 
 ###GLOBAL VARIABLES
 
-new_path = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_10_nobidet_IncResV2_randomrotation_negative.json")
-new_path2 = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_10_nobidet_IncResV2_randomrotation_negative_testresults.json")
+new_path = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_10_nobidet_Res50_randomrotation_negative.json")
+new_path2 = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_10_nobidet_Res50_randomrotation_negative_testresults.json")
 error_path = os.path.join(os.path.dirname(__file__),"../Flurplandaten/FalsePredictions")
 
 all_categories = np.array([[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -115,6 +115,7 @@ def getModel():
     #Ggf. vgg19
     #InceptionResnetV2
     base_model = keras.applications.InceptionResNetV2(weights = 'imagenet', include_top = False, classes = 12, input_shape = (100,100,3))
+    base_model = keras.applications.ResNet50(weights = 'imagenet', include_top = False, classes = 12, input_shape = (100,100,3))
     x = keras.layers.Flatten()(base_model.output)
     predictions = keras.layers.Dense(12, activation='softmax')(x)
     
@@ -358,6 +359,6 @@ else:
     model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = batchSize, epochs = epochs, callbacks = [evaluationCallback(batchSize, learnRate)])
 
 #Save net
-net_path = os.path.join(script_dir, "../Netze/try10_IncResV2_randomrotation_negative.h5")
+net_path = os.path.join(script_dir, "../Netze/try10_Res50_randomrotation_negative.h5")
 
 model.save(net_path)
