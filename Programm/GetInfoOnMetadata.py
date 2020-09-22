@@ -17,7 +17,7 @@ metadata_path = os.path.join(script_dir, rel_path)
 #Load json file    
 metadata = json.loads(open(metadata_path, 'r').read())
 
-rel_path = "../Flurplandaten/images_diagonals"
+rel_path = "../Flurplandaten/images_only_rectangular"
 path = os.path.join(script_dir, rel_path)
 
 category_counts = np.zeros(12)

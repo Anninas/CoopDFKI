@@ -35,7 +35,7 @@ mask_sizes_y = [int(results["class"+str(y)+"height"]*(6/10)) for y in range(12)]
 
 #Import prediction to post process
 script_dir = os.path.dirname(__file__)
-with open(os.path.join(script_dir, "predictions1.json"), 'r') as file:
+with open(os.path.join(script_dir, "predictions.json"), 'r') as file:
     initial_prediction = np.asarray(json.load(file))
 
 

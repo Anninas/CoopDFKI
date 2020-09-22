@@ -71,57 +71,11 @@ print("Done")
 ###END LOADING DATA
 
 
-
-###START ACTUAL CLEANING
-print("Checking all annotations...")
-n = 0        
-
-#Check all annotations
-while n < len(metadata['annotations']):
-    
-    image_id = metadata['annotations'][n]['image_id']
-    
-    #Check if image exists
-    if image_id in imgs_idtoind:
-        
-        #Get image data
-        bbox = metadata['annotations'][n]['bbox']
-        img_width = metadata['images'][imgs_idtoind[image_id]]['width']
-        img_height = metadata['images'][imgs_idtoind[image_id]]['height']
-    
-        #Delete image if it is larger than 100*100 or smaller than 10*10 or if it is too close to the edges of the floorplan
-        if (bbox[3] < 10) or (bbox[2] < 10) or (bbox[3] > 100) or (bbox[2] > 100) or (img_height < (bbox[1] + bbox[3])) or (img_height < bbox[3]) or (img_width < (bbox[0]+bbox[2])) or (img_width < bbox[2]):       
-            del metadata['annotations'][n]
-        
-        #Overwrite all bidets as toilets and let other classes follow one down
-        if(metadata['annotations'][n]['category_id'] == 5):
-            metadata['annotations'][n]['category_id'] = 1
-        elif(metadata['annotations'][n]['category_id'] > 5):
-            metadata['annotations'][n]['category_id'] = (metadata['annotations'][n]['category_id'] - 1)
-    n += 1
-
-print("Done")
-
-x = 0
-
-print("Fixing categories...")
-#Delete bidet class, let other classes follow one down
-while x < len(metadata['categories']):
-    if(metadata['categories'][x]['id'] == 5):
-        del metadata['categories'][x]
-    if(metadata['categories'][x]['id'] > 5):
-        metadata['categories'][x]['id'] = metadata['categories'][x]['id'] - 1
-    
-    x += 1
-
-metadata['categories'].append({'id':12, 'name':"negative", 'supercategory':None})
-
-print("Done")
-###END ACTUAL CLEANING 
-
-
 ###START CREATION OF NEGATIVE ANNOTATIONS
 print("Creating negative annotations...")
+
+#Add new category to metadata
+metadata['categories'].append({'id':13, 'name':"negative", 'supercategory':None})
 
 counter = 0
 #Loop through all images for creation of negative annotations
@@ -177,7 +131,7 @@ for image in metadata['images']:
             if not 1 in mask[y:y+100, x:x+100]:
                 #If no annotations in the current position area
                 #Save this as a negative annotations
-                metadata['annotations'].append({'bbox':[x, y, 100, 100], 'category_id':12, 'id':(metadata['annotations'][len(metadata['annotations'])-1]['id']+1), 'image_id': image['id']})
+                metadata['annotations'].append({'bbox':[x, y, 100, 100], 'category_id':13, 'id':(metadata['annotations'][len(metadata['annotations'])-1]['id']+1), 'image_id': image['id']})
                 print(metadata['annotations'][len(metadata['annotations'])-1])
                 #Set number one up
                 number += 1
@@ -187,8 +141,61 @@ for image in metadata['images']:
     
 print("Done")
 
-print(metadata['categories'])    
 ###END CREATION OF NEGATIVE ANNOTATIONS
+
+
+###START ACTUAL CLEANING
+print("Checking all annotations...")
+n = 0        
+
+#Check all annotations
+while n < len(metadata['annotations']):
+    
+    image_id = metadata['annotations'][n]['image_id']
+    
+    #Check if image exists
+    if image_id in imgs_idtoind:
+        
+        #Get image data
+        bbox = metadata['annotations'][n]['bbox']
+        img_width = metadata['images'][imgs_idtoind[image_id]]['width']
+        img_height = metadata['images'][imgs_idtoind[image_id]]['height']
+    
+        #Delete image if it is larger than 100*100 or smaller than 10*10 or if it is too close to the edges of the floorplan
+        if (bbox[3] < 10) or (bbox[2] < 10) or (bbox[3] > 100) or (bbox[2] > 100) or (img_height < (bbox[1] + bbox[3])) or (img_height < bbox[3]) or (img_width < (bbox[0]+bbox[2])) or (img_width < bbox[2]):       
+            del metadata['annotations'][n]
+            continue
+        
+        #Overwrite all bidets as toilets and let other classes follow one down
+
+        if(metadata['annotations'][n]['category_id'] == 5):
+            metadata['annotations'][n]['category_id'] = 1
+        elif(metadata['annotations'][n]['category_id'] > 5):
+            metadata['annotations'][n]['category_id'] = (metadata['annotations'][n]['category_id'] - 1)
+
+    n += 1
+
+print("Done")
+
+x = 0
+
+print("Fixing categories...")
+#Delete bidet class, let other classes follow one down
+while x < len(metadata['categories']):
+    if(metadata['categories'][x]['id'] == 5):
+        del metadata['categories'][x]
+    if(metadata['categories'][x]['id'] > 5):
+        metadata['categories'][x]['id'] = metadata['categories'][x]['id'] - 1
+    
+    x += 1
+
+
+
+print("Done")
+###END ACTUAL CLEANING 
+
+
+print(metadata['categories'])  
 
 ###WRITE INTO FILE AND SAVE  
 with open(new_path, 'w') as f:

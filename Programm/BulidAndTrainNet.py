@@ -28,9 +28,10 @@ session = tf.InteractiveSession(config=tf.ConfigProto(gpu_options=gpu_options))
 
 
 ###GLOBAL VARIABLES
+n_classes = 12
 
-new_path = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_10_nobidet_Res50_randomrotation_negative.json")
-new_path2 = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_10_nobidet_Res50_randomrotation_negative_testresults.json")
+new_path = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_12_nobidet_IRV2_randomrotation_negative2.json")
+new_path2 = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_12_nobidet_IRV2_randomrotation_negative2_testresults.json")
 error_path = os.path.join(os.path.dirname(__file__),"../Flurplandaten/FalsePredictions")
 
 all_categories = np.array([[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -62,7 +63,7 @@ def standartize(input_array):
     output_array = []
     
     for array in input_array:
-        output_part = np.zeros(12)
+        output_part = np.zeros(n_classes)
         highest = np.argmax(array, axis = 0)
         output_part[highest] = 1
         output_array.append(output_part)
@@ -74,7 +75,7 @@ def plot_confusion_matrix(cm, title='Confusion matrix', cmap=plt.cm.Blues):
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title(title)
     plt.colorbar()
-    tick_marks = np.arange(12)
+    tick_marks = np.arange(n_classes)
     plt.xticks(tick_marks, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], rotation=45)
     plt.yticks(tick_marks, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
     plt.tight_layout()
@@ -91,7 +92,7 @@ def plot_precision_recall_curve(recall, precision):
     lines = []
     labels = []
         
-    for i, color in zip(range(12), colors):
+    for i, color in zip(range(n_classes), colors):
         l, = plt.plot(recall[i], precision[i], color=color, lw=2)
         lines.append(l)
         labels.append('Precision-recall for class {0} '.format(i))
@@ -114,10 +115,10 @@ def getModel():
     #ResNet 50: base_model = keras.applications.resnet50(weights = 'imagenet', include_top = False, classes = 12, input_shape = (100,100,3))
     #Ggf. vgg19
     #InceptionResnetV2
-    base_model = keras.applications.InceptionResNetV2(weights = 'imagenet', include_top = False, classes = 12, input_shape = (100,100,3))
-    base_model = keras.applications.ResNet50(weights = 'imagenet', include_top = False, classes = 12, input_shape = (100,100,3))
+    base_model = keras.applications.InceptionResNetV2(weights = 'imagenet', include_top = False, classes = n_classes, input_shape = (100,100,3))
+    #base_model = keras.applications.ResNet50(weights = 'imagenet', include_top = False, classes = 12, input_shape = (100,100,3))
     x = keras.layers.Flatten()(base_model.output)
-    predictions = keras.layers.Dense(12, activation='softmax')(x)
+    predictions = keras.layers.Dense(n_classes, activation='softmax')(x)
     
     model = Model(inputs=base_model.input, outputs=predictions)
     
@@ -148,7 +149,7 @@ class evaluationCallback(keras.callbacks.Callback):
         predicted_result = np.argmax(result, axis=1)
         
         #Result of net - binary with eleven zeros and one one
-        standartized_predicted_result = standartize(result)
+        #standartized_predicted_result = standartize(result)
         
         #True result - numbers of the true classes
         true_result = np.argmax(validation_categories, axis=1)
@@ -303,10 +304,10 @@ def trainNet(train_annot_array, train_categories):
 script_dir = os.path.dirname(__file__) 
 
 #Get training data
-rel_path_train_annot = "../Flurplandaten/preprocessed__training_annotations_nobidet_negative.p"
+rel_path_train_annot = "../Flurplandaten/preprocessed__training_annotations_nobidet_negative2.p"
 train_annot_path = os.path.join(script_dir, rel_path_train_annot)
 
-rel_path_train_categories = "../Flurplandaten/object_list_for_training_annotations_nobidet_negative.p"
+rel_path_train_categories = "../Flurplandaten/object_list_for_training_annotations_nobidet_negative2.p"
 train_categories_path = os.path.join(script_dir, rel_path_train_categories)
 
 train_annot = np.array(pickle.load(open(train_annot_path, 'rb')))
@@ -314,10 +315,10 @@ train_annot_array = np.reshape(train_annot, (train_annot.shape[0], 100, 100, 3))
 train_categories = pickle.load(open(train_categories_path, 'rb'))
 
 #Get validation data
-rel_path_validation_annot = "../Flurplandaten/preprocessed__validation_annotations_nobidet_noaugmentation_negative.p"
+rel_path_validation_annot = "../Flurplandaten/preprocessed__validation_annotations_nobidet_negative2.p"
 validation_annot_path = os.path.join(script_dir, rel_path_validation_annot)
 
-rel_path_validation_categories = "../Flurplandaten/object_list_for_validation_annotations_nobidet_noaugmentation_negative.p"
+rel_path_validation_categories = "../Flurplandaten/object_list_for_validation_annotations_nobidet_negative2.p"
 validation_categories_path = os.path.join(script_dir, rel_path_validation_categories)
 
 validation_annot = np.array(pickle.load(open(validation_annot_path, 'rb')))
@@ -325,10 +326,10 @@ validation_annot_array = np.reshape(validation_annot, (validation_annot.shape[0]
 validation_categories = pickle.load(open(validation_categories_path, 'rb'))
 
 #Get test data
-rel_path_test_annot = "../Flurplandaten/preprocessed__test_annotations_nobidet_negative.p"
+rel_path_test_annot = "../Flurplandaten/preprocessed__test_annotations_nobidet_negative2.p"
 test_annot_path = os.path.join(script_dir, rel_path_test_annot)
 
-rel_path_test_categories = "../Flurplandaten/object_list_for_test_annotations_nobidet_negative.p"
+rel_path_test_categories = "../Flurplandaten/preprocessed__test_annotations_nobidet_negative2.p"
 test_categories_path = os.path.join(script_dir, rel_path_test_categories)
 
 test_annot = np.array(pickle.load(open(test_annot_path, 'rb')))
@@ -359,6 +360,6 @@ else:
     model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = batchSize, epochs = epochs, callbacks = [evaluationCallback(batchSize, learnRate)])
 
 #Save net
-net_path = os.path.join(script_dir, "../Netze/try10_Res50_randomrotation_negative.h5")
+net_path = os.path.join(script_dir, "../Netze/try12_IRV2_randomrotation_negative2.h5")
 
 model.save(net_path)
