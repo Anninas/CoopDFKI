@@ -178,15 +178,15 @@ class evaluationCallback(keras.callbacks.Callback):
                 json.dump(trainResults, path)
         
         #Save info for precision-recall-curve
-        precision = []  
-        recall = []
-        thresholds = []
+        #precision = []  
+        #recall = []
+        #thresholds = []
         
         #precision, recall, thresholds = metric.precision_recall_curve(true_result, predicted_result)
         #plot_precision_recall_curve(recall, precision)
         
-        prec, recall, _ = precision_recall_curve(true_result, predicted_result)
-        PrecisionRecallDisplay(precision=prec, recall=recall).plot()
+        #prec, recall, _ = precision_recall_curve(true_result, predicted_result)
+        #PrecisionRecallDisplay(precision=prec, recall=recall).plt()
         
         average_prec = metric.average_precision_score(true_result, predicted_result)
         print('Average Precision is {}'.format(average_prec))
@@ -239,16 +239,20 @@ class evaluationCallback(keras.callbacks.Callback):
         f1 = metric.f1_score(test_true_result, test_predicted_result, average = None)
         print("F1-Score is {}".format(f1))
         
+        average_prec = metric.average_precision_score(test_true_result, test_predicted_result)
+        print("Average Precision is {}".format(average_prec))
+        
         with open(new_path2, 'w') as testpath:
             testResults["SGD: {},{}".format(self.currentBatchSize, self.currentLearnRate)] = f1.tolist()
             json.dump(testResults, testpath)
 
         #Save info for precision-recall-curve
-        precision = dict()  
-        recall = dict()
-        thresholds = dict()
+        #precision = dict()  
+        #recall = dict()
+        #thresholds = dict()
         
         #Category-specific metrics
+        '''
         for current_category in all_categories:
         
             category_number = np.argmax(current_category, axis = 0)    
@@ -269,7 +273,7 @@ class evaluationCallback(keras.callbacks.Callback):
             print('Average Precision of class {} is {}'.format(category_number, average_prec))
 
         plot_precision_recall_curve(recall, precision)
-        
+        '''
         
 
 #Automated training of the net with varying batchSize and learn rate 
