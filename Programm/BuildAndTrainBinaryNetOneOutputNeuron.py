@@ -20,6 +20,8 @@ from keras.models import Model
 import tensorflow as tf
 import pickle
 import sklearn.metrics as metric
+from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import PrecisionRecallDisplay
 from itertools import cycle
 
 #gpu_options = tf.GPUOptions(allow_growth=True)
@@ -30,8 +32,8 @@ from itertools import cycle
 ###GLOBAL VARIABLES
 n_classes = 2
 
-new_path = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_14_IRV2_binary.json")
-new_path2 = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_14_IRV2_binary_testresults.json")
+new_path = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_15_IRV2_binary.json")
+new_path2 = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_15_IRV2_binary_testresults.json")
 error_path = os.path.join(os.path.dirname(__file__),"../Flurplandaten/FalsePredictions")
 
 all_categories = np.array([[1, 0],
@@ -40,8 +42,8 @@ all_categories = np.array([[1, 0],
 trainResults = {}
 testResults = {}
 
-batchSizes = [32, 64, 128, 256]
-learnRates = [0.1, 0.01, 0.001, 0.0001]
+batchSizes = [64, 128, 256, 32]
+learnRates = [0.001, 0.0001, 0.1, 0.01]
 
 
 
@@ -76,16 +78,12 @@ def plot_confusion_matrix(cm, title='Confusion matrix', cmap=plt.cm.Blues):
 #Plot precision recall curve
 def plot_precision_recall_curve(recall, precision):
     # setup plot details
-    colors = cycle(['navy', 'turquoise', 'darkorange', 'cornflowerblue', 'red', 'green', 'teal', 'black', 'purple', 'gold', 'greenyellow', 'deeppink', 'grey'])
+    color = 'navy'
 
     plt.figure(figsize=(7, 8))
     lines = []
-    labels = []
         
-    for i, color in zip(range(n_classes), colors):
-        l, = plt.plot(recall[i], precision[i], color=color, lw=2)
-        lines.append(l)
-        labels.append('Precision-recall for class {0} '.format(i))
+    lines = plt.plot(recall, precision, color=color, lw=2)
             
     fig = plt.gcf()
     fig.subplots_adjust(bottom=0.25)
@@ -93,8 +91,8 @@ def plot_precision_recall_curve(recall, precision):
     plt.ylim([0.0, 1.05])
     plt.xlabel('Recall')
     plt.ylabel('Precision')
-    plt.title('Extension of Precision-Recall curve to multi-class')
-    plt.legend(lines, labels, loc=(0, -.38), prop=dict(size=14))
+    plt.title('Precision-Recall curve')
+    plt.legend(lines, loc=(0, -.38), prop=dict(size=14))
 
 
     plt.show()
@@ -105,10 +103,11 @@ def getModel():
     #ResNet 50: base_model = keras.applications.resnet50(weights = 'imagenet', include_top = False, classes = 12, input_shape = (100,100,3))
     #Ggf. vgg19
     #InceptionResnetV2
-    base_model = keras.applications.InceptionResNetV2(weights = 'imagenet', include_top = False, classes = n_classes, input_shape = (100,100,3))
+    base_model = keras.applications.InceptionResNetV2(weights = 'imagenet', include_top = False, classes = 1, input_shape = (100,100,3))
     #base_model = keras.applications.ResNet50(weights = 'imagenet', include_top = False, classes = 12, input_shape = (100,100,3))
     x = keras.layers.Flatten()(base_model.output)
-    predictions = keras.layers.Dense(1, activation='softmax')(x)
+    x = keras.layers.Dense(512, activation = "relu")(x)
+    predictions = keras.layers.Dense(1, activation='sigmoid')(x)
     
     model = Model(inputs=base_model.input, outputs=predictions)
     
@@ -136,24 +135,25 @@ class evaluationCallback(keras.callbacks.Callback):
         result = model.predict(validation_annot_array)
         
         #Result of net - numbers of the predicted classes
-        predicted_result = np.argmax(result, axis=1)
+        predicted_result = np.round(result)
         
         #Result of net - binary with eleven zeros and one one
         #standartized_predicted_result = standartize(result)
         
         #True result - numbers of the true classes
-        true_result = np.argmax(validation_categories, axis=1)
+        true_result = validation_categories
         
         #Get all annotations that were not predicted correctly to find pattern
         #mask = predicted_result==true_result
         
         #Confusion matrix
+        '''
         cm = metric.confusion_matrix(true_result, predicted_result)
         np.set_printoptions(precision=2)
         cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
         plt.figure()
         plot_confusion_matrix(cm_normalized, title='Normalized confusion matrix')
-
+        '''
         
         #F1-Score
         f1 = metric.f1_score(true_result, predicted_result, average = None)
@@ -178,11 +178,21 @@ class evaluationCallback(keras.callbacks.Callback):
                 json.dump(trainResults, path)
         
         #Save info for precision-recall-curve
-        precision = dict()  
-        recall = dict()
-        thresholds = dict()
+        precision = []  
+        recall = []
+        thresholds = []
+        
+        #precision, recall, thresholds = metric.precision_recall_curve(true_result, predicted_result)
+        #plot_precision_recall_curve(recall, precision)
+        
+        prec, recall, _ = precision_recall_curve(true_result, predicted_result)
+        PrecisionRecallDisplay(precision=prec, recall=recall).plot()
+        
+        average_prec = metric.average_precision_score(true_result, predicted_result)
+        print('Average Precision is {}'.format(average_prec))
         
         #Category-specific metrics
+        '''
         for current_category in all_categories:
         
             category_number = np.argmax(current_category, axis = 0)    
@@ -201,8 +211,7 @@ class evaluationCallback(keras.callbacks.Callback):
             average_prec = metric.average_precision_score(y_true_aktuell, y_pred_aktuell)
         
             print('Average Precision of class {} is {}'.format(category_number, average_prec))
-
-        plot_precision_recall_curve(recall, precision)
+        '''
     
     #Evaluate net with test dataset
     def on_train_end(self, log = None):
@@ -210,20 +219,21 @@ class evaluationCallback(keras.callbacks.Callback):
         
         test_result = model.predict(test_annot_array)
 
-        test_predicted_result = np.argmax(test_result, axis=1)
-        
+        #test_predicted_result = np.argmax(test_result, axis=1)
+        test_predicted_result = np.round(test_result)
         
         #True result - numbers of the true classes
-        test_true_result = np.argmax(test_categories, axis=1)
-       
+        #test_true_result = np.argmax(test_categories, axis=1)
+        test_true_result = test_categories
         
         #Confusion matrix
+        '''
         cm = metric.confusion_matrix(test_true_result, test_predicted_result)
         np.set_printoptions(precision=2)
         cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
         plt.figure()
         plot_confusion_matrix(cm_normalized, title='Normalized confusion matrix')
-
+        '''
         
         #F1-Score
         f1 = metric.f1_score(test_true_result, test_predicted_result, average = None)
@@ -278,7 +288,7 @@ def trainNet(train_annot_array, train_categories):
             opti = keras.optimizers.SGD(lr = learnRate)
             
             #Compile model
-            model.compile(optimizer = opti, loss = "categorical_crossentropy", metrics=["accuracy"])
+            model.compile(optimizer = opti, loss = "binary_crossentropy", metrics=["accuracy"])
 
             print(model.summary())
             print("We have batch size {} and learn rate {}".format(batchSize, learnRate))
@@ -350,9 +360,9 @@ else:
     model = getModel()
     model.compile(optimizer = opti, loss = "binary_crossentropy", metrics=["accuracy"])
     print(model.summary())
-    model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = batchSize, epochs = epochs, callbacks = [evaluationCallback(batchSize, learnRate)])
+    model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = batchSize, epochs = epochs, callbacks = [evaluationCallback(batchSize, learnRate)], shuffle = True)
 
 #Save net
-net_path = os.path.join(script_dir, "../Netze/try14_IRV2_binary.h5")
+net_path = os.path.join(script_dir, "../Netze/try15_IRV2_binary.h5")
 
 model.save(net_path)
