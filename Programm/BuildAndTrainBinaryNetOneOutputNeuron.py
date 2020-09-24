@@ -32,8 +32,8 @@ from itertools import cycle
 ###GLOBAL VARIABLES
 n_classes = 2
 
-new_path = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_15_IRV2_binary.json")
-new_path2 = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_15_IRV2_binary_testresults.json")
+new_path = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_16_IRV2_binary.json")
+new_path2 = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_16_IRV2_binary_testresults.json")
 error_path = os.path.join(os.path.dirname(__file__),"../Flurplandaten/FalsePredictions")
 
 all_categories = np.array([[1, 0],
@@ -42,8 +42,8 @@ all_categories = np.array([[1, 0],
 trainResults = {}
 testResults = {}
 
-batchSizes = [64, 128, 256, 32]
-learnRates = [0.001, 0.0001, 0.1, 0.01]
+batchSizes = [32, 64, 128, 256]
+learnRates = [0.0001, 0.001, 0.01,  0.1]
 
 
 
@@ -174,7 +174,7 @@ class evaluationCallback(keras.callbacks.Callback):
             '''
             #Save training results for evaluation
             with open(new_path, 'w') as path:
-                trainResults["SGD: {},{}, Epoch: {}".format(self.currentBatchSize, self.currentLearnRate, epoch)] = f1.tolist()
+                trainResults["Adam: {},{}, Epoch: {}".format(self.currentBatchSize, self.currentLearnRate, epoch)] = f1.tolist()
                 json.dump(trainResults, path)
         
         #Save info for precision-recall-curve
@@ -243,7 +243,7 @@ class evaluationCallback(keras.callbacks.Callback):
         print("Average Precision is {}".format(average_prec))
         
         with open(new_path2, 'w') as testpath:
-            testResults["SGD: {},{}".format(self.currentBatchSize, self.currentLearnRate)] = f1.tolist()
+            testResults["Adam: {},{}".format(self.currentBatchSize, self.currentLearnRate)] = f1.tolist()
             json.dump(testResults, testpath)
 
         #Save info for precision-recall-curve
@@ -289,7 +289,7 @@ def trainNet(train_annot_array, train_categories):
             model = getModel()
             
             #Choose optimizer
-            opti = keras.optimizers.SGD(lr = learnRate)
+            opti = keras.optimizers.Adam(lr = learnRate)
             
             #Compile model
             model.compile(optimizer = opti, loss = "binary_crossentropy", metrics=["accuracy"])
@@ -359,7 +359,7 @@ else:
     batchSize = int(input("You want to train non-automatedly. Enter batch size:"))
     learnRate = float(input("Now enter the learn rate:"))
     epochs = int(input("How many epochs do you want to train?"))
-    opti = keras.optimizers.SGD(lr = learnRate)
+    opti = keras.optimizers.Adam(lr = learnRate)
 
     model = getModel()
     model.compile(optimizer = opti, loss = "binary_crossentropy", metrics=["accuracy"])
@@ -367,6 +367,6 @@ else:
     model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = batchSize, epochs = epochs, callbacks = [evaluationCallback(batchSize, learnRate)], shuffle = True)
 
 #Save net
-net_path = os.path.join(script_dir, "../Netze/try15_IRV2_binary.h5")
+net_path = os.path.join(script_dir, "../Netze/try16_IRV2_binary.h5")
 
 model.save(net_path)

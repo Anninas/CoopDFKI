@@ -16,7 +16,7 @@ def uploaded_file(filename):
 
 @app.route('/upload')
 def show_upload_page():
-   return flask.render_template('upload.html')
+   return flask.render_template('mainpage.html')
 
    
 @app.route('/uploader', methods = ['GET', 'POST'])
@@ -28,6 +28,7 @@ def upload_file():
       print(APP_ROOT, file = sys.stdout)
       print(UPLOAD_FOLDER, file = sys.stdout)
       file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+	  #from ClassificationToDetection.py import result_json, result_image
       return flask.redirect(flask.url_for('uploaded_file', filename=filename))
       #return 'file uploaded successfully'
 
