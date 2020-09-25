@@ -8,21 +8,18 @@ Created on Tue Sep 22 18:22:31 2020
 ###IMPORT AND SETUP
 
 import json
-from os import listdir
-from os.path import join
+
 import os
 import keras
 import numpy as np
-import PIL
+
 import matplotlib.pyplot as plt
 from keras import layers
 from keras.models import Model
 import tensorflow as tf
 import pickle
 import sklearn.metrics as metric
-from sklearn.metrics import precision_recall_curve
-from sklearn.metrics import PrecisionRecallDisplay
-from itertools import cycle
+
 
 #gpu_options = tf.GPUOptions(allow_growth=True)
 #session = tf.InteractiveSession(config=tf.ConfigProto(gpu_options=gpu_options))
@@ -32,19 +29,15 @@ from itertools import cycle
 ###GLOBAL VARIABLES
 n_classes = 2
 
-new_path = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_16_IRV2_binary.json")
-new_path2 = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_16_IRV2_binary_testresults.json")
+new_path = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_19_IRV2_binaryOne_diagonal2.json")
+new_path2 = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_19_IRV2_binaryOne_testresults_diagonal2.json")
 error_path = os.path.join(os.path.dirname(__file__),"../Flurplandaten/FalsePredictions")
-
-all_categories = np.array([[1, 0],
-                           [0, 1]])
 
 trainResults = {}
 testResults = {}
 
 batchSizes = [32, 64, 128, 256]
 learnRates = [0.0001, 0.001, 0.01,  0.1]
-
 
 
 ###FUNCTION SECTION
@@ -137,23 +130,8 @@ class evaluationCallback(keras.callbacks.Callback):
         #Result of net - numbers of the predicted classes
         predicted_result = np.round(result)
         
-        #Result of net - binary with eleven zeros and one one
-        #standartized_predicted_result = standartize(result)
-        
         #True result - numbers of the true classes
         true_result = validation_categories
-        
-        #Get all annotations that were not predicted correctly to find pattern
-        #mask = predicted_result==true_result
-        
-        #Confusion matrix
-        '''
-        cm = metric.confusion_matrix(true_result, predicted_result)
-        np.set_printoptions(precision=2)
-        cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-        plt.figure()
-        plot_confusion_matrix(cm_normalized, title='Normalized confusion matrix')
-        '''
         
         #F1-Score
         f1 = metric.f1_score(true_result, predicted_result, average = None)
@@ -177,41 +155,10 @@ class evaluationCallback(keras.callbacks.Callback):
                 trainResults["Adam: {},{}, Epoch: {}".format(self.currentBatchSize, self.currentLearnRate, epoch)] = f1.tolist()
                 json.dump(trainResults, path)
         
-        #Save info for precision-recall-curve
-        #precision = []  
-        #recall = []
-        #thresholds = []
-        
-        #precision, recall, thresholds = metric.precision_recall_curve(true_result, predicted_result)
-        #plot_precision_recall_curve(recall, precision)
-        
-        #prec, recall, _ = precision_recall_curve(true_result, predicted_result)
-        #PrecisionRecallDisplay(precision=prec, recall=recall).plt()
         
         average_prec = metric.average_precision_score(true_result, predicted_result)
         print('Average Precision is {}'.format(average_prec))
         
-        #Category-specific metrics
-        '''
-        for current_category in all_categories:
-        
-            category_number = np.argmax(current_category, axis = 0)    
-        
-            #Array of 0s & one 1 showing which true results are of the current category (1)
-            y_true_aktuell = np.array([np.array_equal(current_category, t) for t in validation_categories], dtype=np.uint8)
-            
-            #Result of net - Array of 0s & one 1 showing if results are of current category (1) or not (0)
-            #y_pred_aktuell_binary = np.array([np.array_equal(current_category, t) for t in standartized_predicted_result], dtype=np.uint8)
-            
-            #Result of net - exact probabilities for one class
-            y_pred_aktuell = result[:, category_number]
-            
-            #Expecting only probabilities for current class as 1-dim vector
-            precision[category_number], recall[category_number], thresholds[category_number] = metric.precision_recall_curve(y_true_aktuell, y_pred_aktuell)
-            average_prec = metric.average_precision_score(y_true_aktuell, y_pred_aktuell)
-        
-            print('Average Precision of class {} is {}'.format(category_number, average_prec))
-        '''
     
     #Evaluate net with test dataset
     def on_train_end(self, log = None):
@@ -226,15 +173,6 @@ class evaluationCallback(keras.callbacks.Callback):
         #test_true_result = np.argmax(test_categories, axis=1)
         test_true_result = test_categories
         
-        #Confusion matrix
-        '''
-        cm = metric.confusion_matrix(test_true_result, test_predicted_result)
-        np.set_printoptions(precision=2)
-        cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-        plt.figure()
-        plot_confusion_matrix(cm_normalized, title='Normalized confusion matrix')
-        '''
-        
         #F1-Score
         f1 = metric.f1_score(test_true_result, test_predicted_result, average = None)
         print("F1-Score is {}".format(f1))
@@ -246,34 +184,6 @@ class evaluationCallback(keras.callbacks.Callback):
             testResults["Adam: {},{}".format(self.currentBatchSize, self.currentLearnRate)] = f1.tolist()
             json.dump(testResults, testpath)
 
-        #Save info for precision-recall-curve
-        #precision = dict()  
-        #recall = dict()
-        #thresholds = dict()
-        
-        #Category-specific metrics
-        '''
-        for current_category in all_categories:
-        
-            category_number = np.argmax(current_category, axis = 0)    
-        
-            #Array of 0s & one 1 showing which true results are of the current category (1)
-            y_true_aktuell = np.array([np.array_equal(current_category, t) for t in test_categories], dtype=np.uint8)
-            
-            #Result of net - Array of 0s & one 1 showing if results are of current category (1) or not (0)
-            #y_pred_aktuell_binary = np.array([np.array_equal(current_category, t) for t in standartized_predicted_result], dtype=np.uint8)
-            
-            #Result of net - exact probabilities for one class
-            y_pred_aktuell = test_result[:, category_number]
-            
-            #Expecting only probabilities for current class as 1-dim vector
-            precision[category_number], recall[category_number], thresholds[category_number] = metric.precision_recall_curve(y_true_aktuell, y_pred_aktuell)
-            average_prec = metric.average_precision_score(y_true_aktuell, y_pred_aktuell)
-        
-            print('Average Precision of class {} is {}'.format(category_number, average_prec))
-
-        plot_precision_recall_curve(recall, precision)
-        '''
         
 
 #Automated training of the net with varying batchSize and learn rate 
@@ -308,10 +218,10 @@ def trainNet(train_annot_array, train_categories):
 script_dir = os.path.dirname(__file__) 
 
 #Get training data
-rel_path_train_annot = "../Flurplandaten/preprocessed__training_annotations_binary.p"
+rel_path_train_annot = "../Flurplandaten/preprocessed__training_annotations_binary_diagonal.p"
 train_annot_path = os.path.join(script_dir, rel_path_train_annot)
 
-rel_path_train_categories = "../Flurplandaten/object_list_for_training_annotations_binary.p"
+rel_path_train_categories = "../Flurplandaten/object_list_for_training_annotations_binary_diagonal.p"
 train_categories_path = os.path.join(script_dir, rel_path_train_categories)
 
 train_annot = np.array(pickle.load(open(train_annot_path, 'rb')))
@@ -320,10 +230,10 @@ train_categories_start = pickle.load(open(train_categories_path, 'rb'))
 train_categories = [np.argmax(i) for i in train_categories_start]
 
 #Get validation data
-rel_path_validation_annot = "../Flurplandaten/preprocessed__validation_annotations_binary.p"
+rel_path_validation_annot = "../Flurplandaten/preprocessed__validation_annotations_binary_diagonal.p"
 validation_annot_path = os.path.join(script_dir, rel_path_validation_annot)
 
-rel_path_validation_categories = "../Flurplandaten/object_list_for_validation_annotations_binary.p"
+rel_path_validation_categories = "../Flurplandaten/object_list_for_validation_annotations_binary_diagonal.p"
 validation_categories_path = os.path.join(script_dir, rel_path_validation_categories)
 
 validation_annot = np.array(pickle.load(open(validation_annot_path, 'rb')))
@@ -332,10 +242,10 @@ validation_categories_start = pickle.load(open(validation_categories_path, 'rb')
 validation_categories = [np.argmax(i) for i in validation_categories_start]
 
 #Get test data
-rel_path_test_annot = "../Flurplandaten/preprocessed__test_annotations_binary.p"
+rel_path_test_annot = "../Flurplandaten/preprocessed__test_annotations_binary_diagonal.p"
 test_annot_path = os.path.join(script_dir, rel_path_test_annot)
 
-rel_path_test_categories = "../Flurplandaten/object_list_for_test_annotations_binary.p"
+rel_path_test_categories = "../Flurplandaten/object_list_for_test_annotations_binary_diagonal.p"
 test_categories_path = os.path.join(script_dir, rel_path_test_categories)
 
 test_annot = np.array(pickle.load(open(test_annot_path, 'rb')))
@@ -367,6 +277,6 @@ else:
     model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = batchSize, epochs = epochs, callbacks = [evaluationCallback(batchSize, learnRate)], shuffle = True)
 
 #Save net
-net_path = os.path.join(script_dir, "../Netze/try16_IRV2_binary.h5")
+net_path = os.path.join(script_dir, "../Netze/try19_IRV2_binaryOne_diagonal2.h5")
 
 model.save(net_path)

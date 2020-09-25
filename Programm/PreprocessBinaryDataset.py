@@ -191,7 +191,7 @@ augmentation_numbers_for_training = getNormalizedNumbersOfAugmentation(training_
 #augmentation_numbers_for_validation = getNormalizedNumbersOfAugmentation(validation_annotations_per_category)
   
 script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
-rel_path = "../Flurplandaten/floorplan_metadata_binary.json"
+rel_path = "../Flurplandaten/floorplan_metadata_binary2.json"
 metadata_path = os.path.join(script_dir, rel_path)
 
 #Load json file    
@@ -204,7 +204,7 @@ imgs = []
 imgs_nametoind = {}
 
 #Path for accessing images
-rel_path = "../Flurplandaten/images_only_rectangular"
+rel_path = "../Flurplandaten/images_roundings"
 path = os.path.join(script_dir, rel_path)
 
 #Counter to get index of image
@@ -274,7 +274,7 @@ for annot in metadata['annotations']:
         
         #Create varied Verions of this Annotation (only for training annotations, otherwise comment)
         #Change for training
-        #'''
+        '''
         for i in range(int(augmentation_numbers_for_training[object_category-1])):
             #Type of augmentation
             augmentation = random.randint(0, 2)
@@ -299,7 +299,7 @@ for annot in metadata['annotations']:
                 annotations.append(aug_annot)
                 object_categories.append(object_category)
         
-        #'''
+        '''
 #Hot key encoding of object categories
 
         
@@ -307,12 +307,12 @@ for annot in metadata['annotations']:
 #https://stackoverflow.com/questions/30698004/how-can-i-serialize-a-numpy-array-while-preserving-matrix-dimensions
 
 script_dir = os.path.dirname(__file__)
-annotation_path = os.path.join(script_dir, "../Flurplandaten/preprocessed__training_annotations_binary.p")
+annotation_path = os.path.join(script_dir, "../Flurplandaten/preprocessed__test_annotations_binary_diagonal.p")
 pickle.dump(annotations, open(annotation_path, "wb"))
 
 object_categories_encoded = HotKeyEncode(object_categories, 2)
 
-object_path = os.path.join(script_dir, "../Flurplandaten/object_list_for_training_annotations_binary.p")
+object_path = os.path.join(script_dir, "../Flurplandaten/object_list_for_test_annotations_binary_diagonal.p")
 pickle.dump(object_categories_encoded, open(object_path, "wb"))
 
 ###END PREPROCESSING 

@@ -24,7 +24,7 @@ import imutils
 print("Loading Data...")
 script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
 rel_path = "../Flurplandaten/flo2plan_icdar_instances.json"
-new_path = os.path.join(script_dir, "../Flurplandaten/floorplan_metadata_cleaned_nobidet.json")
+new_path = os.path.join(script_dir, "../Flurplandaten/floorplan_metadata_cleaned_nobidet_binary_diagonal.json")
 metadata_path = os.path.join(script_dir, rel_path)
 
 #Load json file    
@@ -120,21 +120,29 @@ for image in metadata['images']:
      
         
         #Eight negative annotations per image, random position
-        number = 0
-        while(number<8):
+        #number = 0
+        #while(number<8):
+        x = 0
+        y = 0
+        while y < (mask.shape[0]-100) and x < (mask.shape[1]-100):
             
-            #Get random position
-            x = random.randint(0, mask.shape[0]-100)                
-            y = random.randint(0, mask.shape[1]-100)
-            
-            #Check if that position interferes with an annotation
-            if not 1 in mask[y:y+100, x:x+100]:
-                #If no annotations in the current position area
-                #Save this as a negative annotations
-                metadata['annotations'].append({'bbox':[x, y, 100, 100], 'category_id':13, 'id':(metadata['annotations'][len(metadata['annotations'])-1]['id']+1), 'image_id': image['id']})
-                print(metadata['annotations'][len(metadata['annotations'])-1])
-                #Set number one up
-                number += 1
+                #Get random position
+                #x = random.randint(0, mask.shape[0]-100)                
+                #y = random.randint(0, mask.shape[1]-100)
+                
+                #Check if that position interferes with an annotation
+                if not 1 in mask[y:y+100, x:x+100]:
+                    #If no annotations in the current position area
+                    #Save this as a negative annotations
+                    metadata['annotations'].append({'bbox':[x, y, 100, 100], 'category_id':13, 'id':(metadata['annotations'][len(metadata['annotations'])-1]['id']+1), 'image_id': image['id']})
+                    print(metadata['annotations'][len(metadata['annotations'])-1])
+                    #Set number one up
+                    #number += 1
+                    x += 100
+                    y += 100
+                else:
+                    x += 5
+                    y += 5
 
     counter +=1
     

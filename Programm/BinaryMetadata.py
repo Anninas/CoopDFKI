@@ -22,7 +22,7 @@ import imutils
 ###START LOADING DATA
 script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
 metadata_path = os.path.join(script_dir, "../Flurplandaten/floorplan_metadata_cleaned_nobidet.json")
-new_path = os.path.join(script_dir, "../Flurplandaten/floorplan_metadata_binary.json")
+new_path = os.path.join(script_dir, "../Flurplandaten/floorplan_metadata_binary2.json")
 
 #Load json file    
 metadata = json.loads(open(metadata_path, 'r').read())
@@ -81,9 +81,9 @@ while n < len(metadata['annotations']):
         
         #Overwrite all non-negatives as class 0
         if not(metadata['annotations'][n]['category_id'] == 12):
-            metadata['annotations'][n]['category_id'] = 0
-        else:
             metadata['annotations'][n]['category_id'] = 1
+        else:
+            metadata['annotations'][n]['category_id'] = 0
 
     n += 1
 
@@ -97,13 +97,13 @@ while x < len(metadata['categories']):
     if not(metadata['categories'][x]['id'] == 12):
         del metadata['categories'][x]
     else:
-        metadata['categories'][x]['id'] = 1
+        metadata['categories'][x]['id'] = 0
         x += 1
         
     
     
     
-metadata['categories'].append({'id':0, 'name':"object", 'supercategory':None})
+metadata['categories'].append({'id':1, 'name':"object", 'supercategory':None})
 
 print(metadata['categories'])
 
