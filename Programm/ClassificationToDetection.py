@@ -55,14 +55,14 @@ class_predictions_arrays = {}
 for i in range(initial_prediction.shape[2]):
     
     #Load floorplan, here to overwrite it each time
-    floorplan1 = PIL.Image.open(os.path.join(script_dir, "../Flurplandaten/images/001.png")).convert('L').convert('RGB')
+    floorplan1 = PIL.Image.open(os.path.join(script_dir, "../Flurplandaten/images/014.png")).convert('L').convert('RGB')
     
     #Get current prediction and expand dimensions to image
     current_prediction = initial_prediction[:, :, i]
     current_prediction1 = np.expand_dims(current_prediction, axis = 2)
-    current_prediction2 = np.insert(current_prediction1, 0, np.ones((820, 990)), axis = 2)
-    current_prediction3 = np.insert(current_prediction2, 1, np.zeros((820, 990)), axis = 2)
-    current_prediction4 = np.insert(current_prediction3, 2, np.zeros((820, 990)), axis = 2)
+    current_prediction2 = np.insert(current_prediction1, 0, np.ones((450, 600)), axis = 2)
+    current_prediction3 = np.insert(current_prediction2, 1, np.zeros((450, 600)), axis = 2)
+    current_prediction4 = np.insert(current_prediction3, 2, np.zeros((450, 600)), axis = 2)
     
     #Get image values from prediction
     current_prediction5 = np.multiply(current_prediction4, 255)
@@ -76,7 +76,7 @@ for i in range(initial_prediction.shape[2]):
     
     #Paste prediction image on top of floorplan for evaluation
     floorplan1.paste(class_predictions["class"+str(i)], (0,0), class_predictions["class"+str(i)])
-    floorplan1.save(os.path.join(script_dir, "./Kontrollbilder/{}".format(image_name)))
+    floorplan1.save(os.path.join(script_dir, "./Kontrollbilder21/{}".format(image_name)))
 
 
 
@@ -109,7 +109,7 @@ for z in range(initial_prediction.shape[2]):
     non_max_results_list["class"+str(z)] = np.where(class_predictions_nonmax["class"+str(z)] > threshold)
     
     #Sabe results of non max as images and paste on top of floorplan for controll
-    floorplan2 = PIL.Image.open(os.path.join(script_dir, "../Flurplandaten/images/001.png")).convert('L').convert('RGB')
+    floorplan2 = PIL.Image.open(os.path.join(script_dir, "../Flurplandaten/images/014.png")).convert('L').convert('RGB')
     non_max_image = np.zeros((floorplan2.size[1], floorplan2.size[0], 4))
     
     for i in range(len(non_max_results_list["class"+str(z)][0])):
@@ -122,6 +122,6 @@ for z in range(initial_prediction.shape[2]):
     image_name = "class{}.png".format(z)
     
     floorplan2.paste(non_max_results_images["class"+str(z)], (0,0), non_max_results_images["class"+str(z)])
-    floorplan2.save(os.path.join(script_dir, "./KontrollbilderNonMax/{}".format(image_name)))     
+    floorplan2.save(os.path.join(script_dir, "./KontrollbilderNonMax21/{}".format(image_name)))     
     
 

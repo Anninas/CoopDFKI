@@ -33,7 +33,7 @@ floorplan_path = os.path.join(script_dir, "../Flurplandaten/images/{}".format(fl
 
 floorplan = np.array(PIL.Image.open(floorplan_path).convert('L').convert('RGB'))
 
-net1_path = os.path.join(script_dir, "../Netze/try13_IRV2_binary.h5")
+net1_path = os.path.join(script_dir, "../Netze/try21_IRV2_binaryOne_256-0.0001-33.h5")
 print("Loading model 1 now...")
 net1 = keras.models.load_model(net1_path)
 print("Loading model 1 done")
@@ -86,7 +86,7 @@ for y in range(floorplan.shape[0]-100):
             for i in range(prediction.shape[0]):
                 
                 #if object can be seen on this
-                if(prediction[i][1]>prediction[i][0]):
+                if(prediction[i][0]>0.8):
                     
                     #save the annotation
                     object_annotations.append(annotations[i])

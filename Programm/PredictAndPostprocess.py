@@ -34,7 +34,7 @@ def getPrediction(image):
     script_dir = os.path.dirname(__file__)    
     net1_path = os.path.join(script_dir, "../Netze/try13_IRV2_binary.h5")
     net1 = keras.models.load_model(net1_path)
-    net2_path = os.path.join(script_dir, "../Netze/try10_IncResV2_randomrotation.h5")
+    net2_path = os.path.join(script_dir, "../Netze/try21_IRV2_binaryOne_256-0.0001-33.h5")
     net2 = keras.models.load_model(net2_path)
     
     #Prepare the floorplan
@@ -78,7 +78,7 @@ def getPrediction(image):
                 for i in range(prediction.shape[0]):
                     
                     #if object can be seen on this
-                    if(prediction[i][1]>prediction[i][0]):
+                    if(prediction[i][1]>0.8):
                         
                         #save the annotation
                         object_annotations.append(annotations[i])

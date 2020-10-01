@@ -33,7 +33,7 @@ floorplan_path = os.path.join(script_dir, "../Flurplandaten/images/{}".format(fl
 
 floorplan = np.array(PIL.Image.open(floorplan_path).convert('L').convert('RGB'))
 
-net1_path = os.path.join(script_dir, "../Netze/try13_IRV2_binary.h5")
+net1_path = os.path.join(script_dir, "../Netze/try21_IRV2_binaryOne_256-0.0001-33.h5")
 print("Loading model 1 now...")
 net1 = keras.models.load_model(net1_path)
 print("Loading model 1 done")
@@ -130,14 +130,14 @@ class_predictions_arrays = {}
 for i in range(predictions.shape[2]):
     
     #Load floorplan, here to overwrite it each time
-    floorplan1 = PIL.Image.open(os.path.join(script_dir, "../Flurplandaten/images/001.png")).convert('L').convert('RGB')
+    floorplan1 = PIL.Image.open(os.path.join(script_dir, "../Flurplandaten/images/014.png")).convert('L').convert('RGB')
     
     #Get current prediction and expand dimensions to image
     current_prediction = predictions[:, :, i]
     current_prediction1 = np.expand_dims(current_prediction, axis = 2)
-    current_prediction2 = np.insert(current_prediction1, 0, np.ones((820, 990)), axis = 2)
-    current_prediction3 = np.insert(current_prediction2, 1, np.zeros((820, 990)), axis = 2)
-    current_prediction4 = np.insert(current_prediction3, 2, np.zeros((820, 990)), axis = 2)
+    current_prediction2 = np.insert(current_prediction1, 0, np.ones((450, 600)), axis = 2)
+    current_prediction3 = np.insert(current_prediction2, 1, np.zeros((450, 600)), axis = 2)
+    current_prediction4 = np.insert(current_prediction3, 2, np.zeros((450, 600)), axis = 2)
     
     #Get image values from prediction
     current_prediction5 = np.multiply(current_prediction4, 255)
@@ -151,5 +151,5 @@ for i in range(predictions.shape[2]):
     
     #Paste prediction image on top of floorplan for evaluation
     floorplan1.paste(class_predictions["class"+str(i)], (0,0), class_predictions["class"+str(i)])
-    floorplan1.save(os.path.join(script_dir, "./KontrollbilderBinaryTest/{}".format(image_name)))
+    floorplan1.save(os.path.join(script_dir, "./KontrollbilderBinaryTest21/{}".format(image_name)))
 

@@ -29,8 +29,8 @@ import sklearn.metrics as metric
 ###GLOBAL VARIABLES
 n_classes = 2
 
-new_path = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_19_IRV2_binaryOne_diagonal2.json")
-new_path2 = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_19_IRV2_binaryOne_testresults_diagonal2.json")
+new_path = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_21_IRV2_binaryOne_random.json")
+new_path2 = os.path.join(os.path.dirname(__file__), "../Formal/f1_scores_automated_training_21_IRV2_binaryOne_testresults_random.json")
 error_path = os.path.join(os.path.dirname(__file__),"../Flurplandaten/FalsePredictions")
 
 trainResults = {}
@@ -218,10 +218,10 @@ def trainNet(train_annot_array, train_categories):
 script_dir = os.path.dirname(__file__) 
 
 #Get training data
-rel_path_train_annot = "../Flurplandaten/preprocessed__training_annotations_binary_diagonal.p"
+rel_path_train_annot = "../Flurplandaten/preprocessed__training_annotations_binary_random.p"
 train_annot_path = os.path.join(script_dir, rel_path_train_annot)
 
-rel_path_train_categories = "../Flurplandaten/object_list_for_training_annotations_binary_diagonal.p"
+rel_path_train_categories = "../Flurplandaten/object_list_for_training_annotations_binary_random.p"
 train_categories_path = os.path.join(script_dir, rel_path_train_categories)
 
 train_annot = np.array(pickle.load(open(train_annot_path, 'rb')))
@@ -230,10 +230,10 @@ train_categories_start = pickle.load(open(train_categories_path, 'rb'))
 train_categories = [np.argmax(i) for i in train_categories_start]
 
 #Get validation data
-rel_path_validation_annot = "../Flurplandaten/preprocessed__validation_annotations_binary_diagonal.p"
+rel_path_validation_annot = "../Flurplandaten/preprocessed__validation_annotations_binary_random.p"
 validation_annot_path = os.path.join(script_dir, rel_path_validation_annot)
 
-rel_path_validation_categories = "../Flurplandaten/object_list_for_validation_annotations_binary_diagonal.p"
+rel_path_validation_categories = "../Flurplandaten/object_list_for_validation_annotations_binary_random.p"
 validation_categories_path = os.path.join(script_dir, rel_path_validation_categories)
 
 validation_annot = np.array(pickle.load(open(validation_annot_path, 'rb')))
@@ -242,10 +242,10 @@ validation_categories_start = pickle.load(open(validation_categories_path, 'rb')
 validation_categories = [np.argmax(i) for i in validation_categories_start]
 
 #Get test data
-rel_path_test_annot = "../Flurplandaten/preprocessed__test_annotations_binary_diagonal.p"
+rel_path_test_annot = "../Flurplandaten/preprocessed__test_annotations_binary_random.p"
 test_annot_path = os.path.join(script_dir, rel_path_test_annot)
 
-rel_path_test_categories = "../Flurplandaten/object_list_for_test_annotations_binary_diagonal.p"
+rel_path_test_categories = "../Flurplandaten/object_list_for_test_annotations_binary_random.p"
 test_categories_path = os.path.join(script_dir, rel_path_test_categories)
 
 test_annot = np.array(pickle.load(open(test_annot_path, 'rb')))
@@ -277,6 +277,6 @@ else:
     model.fit(x = train_annot_array, y = np.array(train_categories), batch_size = batchSize, epochs = epochs, callbacks = [evaluationCallback(batchSize, learnRate)], shuffle = True)
 
 #Save net
-net_path = os.path.join(script_dir, "../Netze/try19_IRV2_binaryOne_diagonal2.h5")
+net_path = os.path.join(script_dir, "../Netze/try21_IRV2_binaryOne_256-0.0001-33.h5")
 
 model.save(net_path)

@@ -191,7 +191,7 @@ augmentation_numbers_for_training = getNormalizedNumbersOfAugmentation(training_
 #augmentation_numbers_for_validation = getNormalizedNumbersOfAugmentation(validation_annotations_per_category)
   
 script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
-rel_path = "../Flurplandaten/floorplan_metadata_binary2.json"
+rel_path = "../Flurplandaten/floorplan_metadata_binary_random.json"
 metadata_path = os.path.join(script_dir, rel_path)
 
 #Load json file    
@@ -307,12 +307,12 @@ for annot in metadata['annotations']:
 #https://stackoverflow.com/questions/30698004/how-can-i-serialize-a-numpy-array-while-preserving-matrix-dimensions
 
 script_dir = os.path.dirname(__file__)
-annotation_path = os.path.join(script_dir, "../Flurplandaten/preprocessed__test_annotations_binary_diagonal.p")
+annotation_path = os.path.join(script_dir, "../Flurplandaten/preprocessed__test_annotations_binary_random.p")
 pickle.dump(annotations, open(annotation_path, "wb"))
 
 object_categories_encoded = HotKeyEncode(object_categories, 2)
 
-object_path = os.path.join(script_dir, "../Flurplandaten/object_list_for_test_annotations_binary_diagonal.p")
+object_path = os.path.join(script_dir, "../Flurplandaten/object_list_for_test_annotations_binary_random.p")
 pickle.dump(object_categories_encoded, open(object_path, "wb"))
 
 ###END PREPROCESSING 
