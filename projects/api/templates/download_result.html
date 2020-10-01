@@ -1,0 +1,42 @@
+<html>
+
+<link rel = "stylesheet" href = "style_download.css">
+<head>
+	<title>Object Detection in Floorplan Images</title>
+	
+</head>
+<body>
+	<div class = "container">
+		
+		<div class = "banner">
+			<div class = "app-text">
+				<h1> Your result is here!</h1>
+				<p>Just click the download button to download the result as a JSON-file and an image.</p>
+				
+				<div class = "upload-btn">
+					
+					<form action = "http://localhost:5000/uploader" method = "POST"> 
+						
+						<enctype = "multipart/form-data">
+						
+						<a id = "download-result" href="/result/result.zip" download>
+						<label for = "download-result" class = "custom-download-result">
+							DOWNLOAD
+						</label>
+						
+					</form>
+					
+				</div>
+			</div>
+			<div class = "app-picture">
+				<img src = "Living-AI.png">
+			</div>
+		</div>
+	</div>
+
+
+
+
+</body>
+
+</html>
