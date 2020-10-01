@@ -11,13 +11,6 @@
 	background: #42455a
 	
 }
-.logo img{
-	
-	width: 30px;
-	margin-top: -7px;
-	margin-right: 48px;
-	
-}
 .banner{
 	
 	width:80%;
@@ -51,12 +44,7 @@
 .app-picture img{
 	width: 100%;
 }
-input[type="file"]{
-	opacity: 0; /* make transparent */
-	z-index: -1; /* move under anything else */
-	position: absolute; /* don't let it take up space */
-}
-.custom-file-upload{
+.custom-download-result{
 	border: 1px solid #8BDC1D;
 	color: #8BDC1D;
 	font-weight: bold;
@@ -64,22 +52,7 @@ input[type="file"]{
 	padding: 6px 12px;
 	cursor: pointer;
 }
-input[type="submit"]{
-	opacity: 0; /* make transparent */
-	z-index: -1; /* move under anything else */
-	position: absolute; /* don't let it take up space */
-}
-.custom-file-submit{
-	border: 1px solid #8BDC1D;
-	color: #8BDC1D;
-	font-weight:bold;
-	display: inline-block;
-	padding: 6px 12px;
-	cursor: pointer;
-}
-input:focus + label {
-  outline: 2px solid;
-}
+
 
 
 
