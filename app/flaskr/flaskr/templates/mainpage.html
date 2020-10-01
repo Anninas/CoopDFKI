@@ -1,7 +1,9 @@
 <html>
+
 <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
 
-<link rel = "stylesheet" href = "style.css">
+<link rel="stylesheet" type=text/css href="static/stylesheets/style.css">
+
 <head>
 	<title>Object Detection in Floorplan Images</title>
 	
@@ -16,8 +18,7 @@
 				
 				<div class = "upload-btn">
 					
-					<form action = "http://localhost:5000/uploader" method = "POST"> 
-						
+					<form action = "http://localhost:5000/uploader" method = "POST" enctype="multipart/form-data"> 
 						<enctype = "multipart/form-data">
 						<input id = "file-upload" type = "file" name = "file" />
 						<label for = "file-upload" class = "custom-file-upload">
@@ -46,7 +47,7 @@
 				</div>
 			</div>
 			<div class = "app-picture">
-				<img src = "Living-AI.png">
+				<img src = "static/images/Living-AI-2.png">
 			</div>
 		</div>
 	</div>

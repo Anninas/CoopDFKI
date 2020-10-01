@@ -1,6 +1,7 @@
 <html>
 
-<link rel = "stylesheet" href = "style_download.css">
+<link rel = "stylesheet" href = "{{url_for('static', filename='stylesheets/style_download.css')}}">
+
 <head>
 	<title>Object Detection in Floorplan Images</title>
 	
@@ -19,7 +20,7 @@
 						
 						<enctype = "multipart/form-data">
 						
-						<a id = "download-result" href="/result/result.zip" download>
+						<a id = "download-result" href="/results.zip" download>
 						<label for = "download-result" class = "custom-download-result">
 							DOWNLOAD
 						</label>
@@ -29,7 +30,7 @@
 				</div>
 			</div>
 			<div class = "app-picture">
-				<img src = "Living-AI.png">
+				<img src = "{{ url_for('static', filename='images/Living-AI-2.png') }}">
 			</div>
 		</div>
 	</div>
