@@ -25,6 +25,7 @@ import sklearn.metrics as metric
 from itertools import cycle
 import pandas as pd
 import time
+import PredictAndPostprocess as PP
 
 script_dir = os.path.dirname(__file__)
 
@@ -51,7 +52,7 @@ object_annotations = []
 object_x_list = []
 object_y_list = []
 
-batch_size1 = 128
+batch_size1 = 256
 
 counter = 0
 #large_counter = ((floorplan.shape[0]-100) * (floorplan.shape[1]-100))/batch_size
@@ -93,18 +94,6 @@ for y in range(floorplan.shape[0]-100):
                     #save their x and y coordinates
                     object_x_list.append(((initial_x + i)%(floorplan.shape[1]-100))+50)
                     object_y_list.append(initial_y + ((initial_x + i)//(floorplan.shape[1]-100))+50)
-                else:
-                    print("Background recognized")
-                #x_i = ((initial_x + i)%(floorplan.shape[1]-100))+50 
-                #y_i = initial_y + ((initial_x + i)//(floorplan.shape[1]-100))+50
-                
-                #predictions[y_i][x_i]=prediction[i]
-                #print("current prediction = {}".format(prediction[i]))
-                #print("saved current prediction = {}".format(predictions[y_i][x_i]))
-            
-            #large_counter -= 1
-            
-            #print("{} steps left".format(large_counter))
             
             counter = 0
             annotations.clear()
@@ -154,7 +143,12 @@ with open('predictions.json', 'w')as file:
 np.save('predictions.npy', predictions)
 #started 15:01
 
+result_image, result_json = PP.getPostprocessedResults(predictions, floorplan)
 
+with open('result.json', 'w') as file:
+    json.dump(result_json, file)
+
+result_image.save("result_image.png")
 
 
 

@@ -12,9 +12,20 @@
 	<div class = "container">
 
 		<script type=text/javascript>
-				$(function() {
-					$.getJSON('/predict', function(data) {});
+				$.ajaxSetup({
+					crossOrigin: true
 				});
+				
+				$.ajax({
+					crossOrigin: true,
+					type:"GET",
+					dataType: "json",
+					url: "http://127.0.0.1:5000/predict",
+					success: function(data){
+						buf1=data;
+						console.log(data);
+					}
+})
 		</script>
 
 		<div class = "banner">

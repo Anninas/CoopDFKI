@@ -79,7 +79,7 @@ while n < len(metadata['annotations']):
     #Check if image exists
     if image_id in imgs_idtoind: 
         
-        #Overwrite all non-negatives as class 0
+        #Overwrite all non-negatives as class 1
         if not(metadata['annotations'][n]['category_id'] == 12):
             metadata['annotations'][n]['category_id'] = 1
         else:

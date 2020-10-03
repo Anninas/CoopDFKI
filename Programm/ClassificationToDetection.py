@@ -76,7 +76,7 @@ for i in range(initial_prediction.shape[2]):
     
     #Paste prediction image on top of floorplan for evaluation
     floorplan1.paste(class_predictions["class"+str(i)], (0,0), class_predictions["class"+str(i)])
-    floorplan1.save(os.path.join(script_dir, "./Kontrollbilder21/{}".format(image_name)))
+    floorplan1.save(os.path.join(script_dir, "./Kontrollbilder22/{}".format(image_name)))
 
 
 
@@ -122,6 +122,6 @@ for z in range(initial_prediction.shape[2]):
     image_name = "class{}.png".format(z)
     
     floorplan2.paste(non_max_results_images["class"+str(z)], (0,0), non_max_results_images["class"+str(z)])
-    floorplan2.save(os.path.join(script_dir, "./KontrollbilderNonMax21/{}".format(image_name)))     
+    floorplan2.save(os.path.join(script_dir, "./KontrollbilderNonMax22/{}".format(image_name)))     
     
 

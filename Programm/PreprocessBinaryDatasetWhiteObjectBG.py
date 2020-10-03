@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Sep 17 18:33:35 2020
+Created on Sat Oct  3 18:40:16 2020
 
 @author: anni
 """
@@ -55,23 +55,54 @@ def invert(img):
         
     return inverted_image
                 
-def StandardAnnotation(img, bound):
+def StandardAnnotation(img, points):
     
-    #Cuts out the annotation as the centre of a 100x100 image
-    #This is what the expression behind bound 1/0 does, putting it in the middle
-    #Get x-coordinate of upper left corner rounded down
-    annot_x1 = trim(int((bound[0]) - (100 - bound[2])/2), 0, img.shape[1]-100) 
-    #Get y-coordinate of upper left corner rounded down               
-    annot_y1 = trim(int((bound[1]) - (100 - bound[3])/2), 0, img.shape[0]-100) 
-    #Get width and height
-    annot_width = 100
-    annot_height = 100
-    #Calculate x-coordinate of lower right corner
-    annot_x2 = annot_x1 + annot_width
-    #Calculate y-coordinate of lower right corner                             
-    annot_y2 = annot_y1 + annot_height                           
+    #Cuts out the annotation out of the image by using segmentation and places it on white background
+    mask = np.zeros(img.shape, dtype=np.uint8)
     
-    return img[annot_y1:annot_y2, annot_x1:annot_x2]
+    polygon = [[]]
+    
+    xs = []
+    ys = []
+    
+    i=0
+    
+    #Get points and sort them into polygon
+    while i < len(points):
+        x = trim(points[i], 0, img.shape[1])
+        y = trim(points[i+1], 0, img.shape[0])
+        
+        polygon[0].append([x, y])
+        xs.append(x)
+        ys.append(y)
+        
+        
+        i+= 2
+    
+    #Get coordinates for cropping to 100*100 later
+    mid_x = (np.max(xs)+np.min(xs))/2
+    mid_y = (np.max(ys)+np.min(ys))/2
+    x1 = mid_x - 50
+    x2 = mid_x + 50
+    y1 = mid_y - 50
+    y2 = mid_y + 50
+ 
+    #method 1 smooth region
+    cv2.drawContours(mask, [np.array(polygon)], -1, (255, 255, 255), -1, cv2.LINE_AA)
+ 
+    res = cv2.bitwise_and(img, img, mask = mask)
+ 
+    ## create the white background of the same size of original image
+    wbg = np.ones_like(img, np.uint8)*255
+    cv2.bitwise_not(wbg, wbg, mask=mask)
+    
+    # overlap the resulted cropped image on the white background
+    dst = wbg+res
+    
+    #Crop to 100*100 around the annotation
+    result_standard_annotation = dst[y1:y2, x1:x2]
+    
+    return result_standard_annotation
  
 def Offset2dAnnotation(img, bound):
     
@@ -264,7 +295,8 @@ object_categories = []
 #Loop through all annotations
 for annot in metadata['annotations']:
     #Get bounding box
-    bbox = annot['bbox']                                            
+    bbox = annot['bbox']  
+    points = annot['segmentation']                                          
     #Get image id
     img_id = annot['image_id']    
 
@@ -278,7 +310,7 @@ for annot in metadata['annotations']:
         annot_img = imgs[imgs_idtoind[img_id]]                      
         
         #Add current annotation to list
-        annotations.append(StandardAnnotation(annot_img, bbox))
+        annotations.append(StandardAnnotation(annot_img, points))
         object_categories.append(object_category)
         
         
@@ -302,8 +334,8 @@ for annot in metadata['annotations']:
             #Rotate
             if augmentation == 0:# With offset: elif, 1; without : if, 0 
 
-                aug_annot = RotateAnnotation(annot_img, bbox)
                 annotations.append(aug_annot)
+                aug_annot = RotateAnnotation(annot_img, bbox)
                 object_categories.append(object_category)
 
             #Rescale
