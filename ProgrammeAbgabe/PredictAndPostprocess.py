@@ -5,17 +5,27 @@ Created on Thu Sep 24 19:33:55 2020
 @author: anni
 """
 
+import json
+from os import listdir
+from os.path import join
 import os
 import keras
+import tensorflow as tf
 import numpy as np
 import PIL
 import PIL.ImageOps
+import matplotlib.pyplot as plt
+from keras import layers
+from keras.models import Model
 import cv2
+import random
+import imutils
+import pickle
+import sklearn.metrics as metric
 from itertools import cycle
-import copy
-import tensorflow as tf
+import pandas as pd
 import time
-
+import copy
 
 def bounding_box(points):
 
@@ -28,35 +38,12 @@ def bounding_box(points):
 
 def getPrediction(image):
     
-    '''
-    NUM_PARALLEL_EXEC_UNITS = multiprocessing.cpu_count()
-    config = tf.compat.v1.ConfigProto(intra_op_parallelism_threads=NUM_PARALLEL_EXEC_UNITS, inter_op_parallelism_threads=2,
-                           allow_soft_placement=True, device_count={'CPU': NUM_PARALLEL_EXEC_UNITS})
-    tf.config.optimizer.set_jit(True)
-    session = tf.compat.v1.Session(config=config)
-
-    tf.compat.v1.keras.backend.set_session(session)
-    os.environ["OMP_NUM_THREADS"] = "4"
-    os.environ["KMP_BLOCKTIME"] = "30"
-    os.environ["KMP_SETTINGS"] = "1"
-    os.environ["KMP_AFFINITY"] = "granularity=fine,verbose,compact,1,0"
-    '''
-    
-    tf.keras.backend.clear_session()
-    config = tf.compat.v1.ConfigProto()
-    config.gpu_options.allow_growth = True
-    session = tf.compat.v1.Session(config=config)
-    tf.compat.v1.keras.backend.set_session(session)
-    
-    print('Loading models...')
     #Load the nets
     script_dir = os.path.dirname(__file__)    
-    net1_path = os.path.join(script_dir, "./Netze/try22_IRV2_binaryOne_64-0.0001-9.h5")
+    net1_path = os.path.join(script_dir, "../Netze/try13_IRV2_binary.h5")
     net1 = keras.models.load_model(net1_path)
-    net2_path = os.path.join(script_dir, "./Netze/try10_IncResV2_randomrotation.h5")
+    net2_path = os.path.join(script_dir, "../Netze/try21_IRV2_binaryOne_256-0.0001-33.h5")
     net2 = keras.models.load_model(net2_path)
-    
-    print('Loading models done...')
     
     #Prepare the floorplan
     floorplan = np.array(image.convert('L').convert('RGB'))
@@ -68,28 +55,25 @@ def getPrediction(image):
     object_x_list = []
     object_y_list = []
     
-    batch_size1 = 2048
+    batch_size1 = 128
     
     counter = 0
     #large_counter = ((floorplan.shape[0]-100) * (floorplan.shape[1]-100))/batch_size
-    start = time.time()
-    print('Starting binary prediction...')
+    
     
     #prediction binary
     for y in range(floorplan.shape[0]-100):
         for x in range(floorplan.shape[1]-100):
         
             #get initial x and y for this batch
-
             if(counter == 0):
                 initial_x = x
                 initial_y = y
-
+            
             #get current annotations
             curr_annot = floorplan[y:(y+100), x:(x+100)]
             annotations.append(curr_annot)
             
-
             counter += 1
             
             #batch size or edge of image reached
@@ -97,20 +81,20 @@ def getPrediction(image):
                 
                 #print("Predicting now...")
                 #predict takes np.array, no list!
-                prediction = net1.predict(np.array(annotations))
+                prediction = net1.predict_on_batch(np.array(annotations))
                 #print("Prediction done")
-                
                 for i in range(prediction.shape[0]):
                     
                     #if object can be seen on this
-                    if(prediction[i]>0.8):
+                    if(prediction[i][1]>0.8):
                         
                         #save the annotation
                         object_annotations.append(annotations[i])
                         #save their x and y coordinates
                         object_x_list.append(((initial_x + i)%(floorplan.shape[1]-100))+50)
                         object_y_list.append(initial_y + ((initial_x + i)//(floorplan.shape[1]-100))+50)
-                        
+                    else:
+                        print("Background recognized")
                     #x_i = ((initial_x + i)%(floorplan.shape[1]-100))+50 
                     #y_i = initial_y + ((initial_x + i)//(floorplan.shape[1]-100))+50
                     
@@ -124,25 +108,8 @@ def getPrediction(image):
                 
                 counter = 0
                 annotations.clear()
-
-    '''
-    prediction = net1.predict(np.array(annotations))
-    #print("Prediction done")
-    for i in range(prediction.shape[0]):
-        
-        #if object can be seen on this
-        if(prediction[i]>0.8):
-            
-            #save the annotation
-            object_annotations.append(annotations[i])
-            #save their x and y coordinates
-            object_x_list.append(((0 + i)%(floorplan.shape[1]-100))+50)
-            object_y_list.append(0 + ((0 + i)//(floorplan.shape[1]-100))+50)
-    '''            
     
-    print('Binary prediction done...')
     
-    print('Starting object prediction')
     #predicting objects
     object_annotation_batch = []
     batch_counter = 0    
@@ -177,43 +144,12 @@ def getPrediction(image):
                 
                 predictions[y_object][x_object] = prediction2[i]
 
-    print('Object prediction done')
-    end = time.time()
 
-    print("Time for prediction loop: {}".format(end-start))
-    
     return predictions
 
 def getPostprocessedResults(initial_prediction, floorplan):
     
-    print('Starting postprocessing')
-    
-    #from GetMaskSizesForNonMaximumSuppression import results
-    
-    results = {'class0height': 33.74259025037887, 
-               'class0width': 33.39464882943144, 
-               'class1height': 55.6330990685357, 
-               'class1width': 56.39938841925727, 
-               'class2height': 61.036729094039565, 
-               'class2width': 58.72386201370594, 
-               'class3height': 29.28880152591439, 
-               'class3width': 29.5078879326813, 
-               'class4height': 48.24540004107648, 
-               'class4width': 49.09076749535626, 
-               'class5height': 30.060928380419636,
-               'class5width': 29.805765787760418, 
-               'class6height': 33.859484788848135, 
-               'class6width': 33.76672121373618, 
-               'class7height': 55.18505715300597, 
-               'class7width': 56.096098936678516, 
-               'class8height': 35.81207212573754, 
-               'class8width': 35.174171767548884, 
-               'class9height': 50.957503197898326, 
-               'class9width': 53.86868715957856, 
-               'class10height': 53.372852117365056, 
-               'class10width': 51.81429450295188, 
-               'class11height': 98.86711911871882, 
-               'class11width': 98.78940842883422}
+    from GetMaskSizesForNonMaximumSuppression import results
 
         #Get from other script, sizes of masks for non max supression (60% of average sizeof symbols)
     mask_sizes_x = [int(results["class"+str(x)+"width"]*(6/10)) for x in range(12)]
@@ -306,14 +242,14 @@ def getPostprocessedResults(initial_prediction, floorplan):
             else:
                 help_image = np.zeros(initial_prediction.shape[0:2])
                 
-                diff_y = mask_size_y + mask_size_y*0.5
-                diff_x = mask_size_x + mask_size_x*0.5 
+                diff_y = (mask_size_y + mask_size_y*0.5)/2
+                diff_x = (mask_size_x + mask_size_x*0.5)/2     
                 
                 
-                y1 = int(y-diff_y)
-                y2 = int(y+diff_y)
-                x1 = int(x-diff_x)
-                x2 = int(x+diff_x)
+                y1 = y-diff_y
+                y2 = y+diff_y
+                x1 = x-diff_x
+                x2 = x+diff_x
                 
                 help_image[y1:y2, x1:x2] = initial_prediction[y1:y2, x1:x2, n_class]
                 current_points = np.where(help_image > 0)
@@ -345,9 +281,7 @@ def getPostprocessedResults(initial_prediction, floorplan):
             
                 
     result_image = PIL.Image.fromarray(result_image)
-     
-    print('Postprocessing done')
-    
+        
     return result_image, result_json
         
    

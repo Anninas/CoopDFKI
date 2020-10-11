@@ -1,0 +1,60 @@
+<html>
+
+<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+
+<link rel="stylesheet" type=text/css href="static/stylesheets/style.css">
+
+<head>
+	<title>Object Detection in Floorplan Images</title>
+	
+</head>
+<body>
+	<div class = "container">
+		
+		<div class = "banner">
+			<div class = "app-text">
+				<h1> Get the objects on your floorplan detected!</h1>
+				<p>Just click the upload button, upload your file and get your prediction within minutes.</p>
+				
+				<div class = "upload-btn">
+					
+					<form action = "http://localhost:5000/uploader" method = "POST" enctype="multipart/form-data"> 
+						<enctype = "multipart/form-data">
+						<input id = "file-upload" type = "file" name = "file" />
+						<label for = "file-upload" class = "custom-file-upload">
+							UPLOAD IMAGE
+						</label>
+						
+						<div id = "file-upload-filename"><p id = "p1">Please choose a floorplan image.</p></div>
+						
+						<script> 
+							$(document).ready(function() { 
+								$('input[type="file"]').change(function(e) { 
+									var fileName = e.target.files[0].name; 
+									document.getElementById("p1").innerHTML = ( 'You selected ' + fileName); 
+					  
+								}); 
+							}); 
+						</script>
+						
+						<input id = "file-submit" type = "submit"/>
+						<label for = "file-submit" class = "custom-file-submit">
+							PREDICT
+						</label>
+						
+					</form>
+					
+				</div>
+			</div>
+			<div class = "app-picture">
+				<img src = "static/images/Living-AI-2.png">
+			</div>
+		</div>
+	</div>
+
+
+
+
+</body>
+
+</html>

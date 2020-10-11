@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Oct  3 18:40:16 2020
+Created on Sun Jan 26 17:55:54 2020
 
 @author: anni
 """
@@ -55,62 +55,23 @@ def invert(img):
         
     return inverted_image
                 
-def StandardAnnotation(img, points):
+def StandardAnnotation(img, bound):
     
-    #Cuts out the annotation out of the image by using segmentation and places it on white background
-    mask = np.zeros(img.shape[0:2], dtype=np.uint8)
-    img = img[:,:, 0]
+    #Cuts out the annotation as the centre of a 100x100 image
     
-    polygon = [[]]
+    #Get x-coordinate of upper left corner rounded down
+    annot_x1 = trim(int((bound[0]) - (100 - bound[2])/2), 0, img.shape[1]-100) 
+    #Get y-coordinate of upper left corner rounded down               
+    annot_y1 = trim(int((bound[1]) - (100 - bound[3])/2), 0, img.shape[0]-100) 
+    #Get width and height
+    annot_width = 100
+    annot_height = 100
+    #Calculate x-coordinate of lower right corner
+    annot_x2 = annot_x1 + annot_width
+    #Calculate y-coordinate of lower right corner                             
+    annot_y2 = annot_y1 + annot_height                           
     
-    xs = []
-    ys = []
-    
-    i=0
-    
-    #Get points and sort them into polygon
-    while i < len(points[0]):
-        x = trim(points[0][i], 0, img.shape[1])
-        y = trim(points[0][i+1], 0, img.shape[0])
-        
-        polygon[0].append([y, x])
-        xs.append(x)
-        ys.append(y)
-        
-        
-        i+= 2
-    
-    #Get coordinates for cropping to 100*100 later
-    mid_x = (np.max(xs)+np.min(xs))/2
-    mid_y = (np.max(ys)+np.min(ys))/2
-    x1 = int(mid_x - 50)
-    x2 = int(mid_x + 50)
-    y1 = int(mid_y - 50)
-    y2 = int(mid_y + 50)
-    
-    
-    nds = np.array(polygon)
-    nds = np.int32([nds]) # Bug with fillPoly, needs explict cast to 32bit
-    
-    #method 1 smooth region
-    cv2.drawContours(mask, nds, -1, (255, 255, 255), -1, cv2.LINE_AA)
-    
-    
-    #cv2.fillPoly(mask, polygon, (255))
-    
-    res = cv2.bitwise_and(img, img, mask = mask)
- 
-    ## create the white background of the same size of original image
-    wbg = np.ones_like(img, np.uint8)*255
-    cv2.bitwise_not(wbg, wbg, mask=mask)
-    
-    # overlap the resulted cropped image on the white background
-    dst = wbg+res
-    
-    #Crop to 100*100 around the annotation
-    result_standard_annotation = dst[y1:y2, x1:x2]
-    
-    return result_standard_annotation
+    return img[annot_y1:annot_y2, annot_x1:annot_x2]
  
 def Offset2dAnnotation(img, bound):
     
@@ -142,7 +103,6 @@ def Offset2dAnnotation(img, bound):
     
 def RotateAnnotation(img, bound):                                 
     
-    '''#Comment out if no offset
     #Rotation of offset or standard annotation    
     case = random.randint(0, 1)
     
@@ -150,10 +110,6 @@ def RotateAnnotation(img, bound):
         rot_img = StandardAnnotation(img, bound)
     else:
         rot_img = Offset2dAnnotation(img, bound)
-    '''
-    
-    #Comment out if with offset
-    rot_img = StandardAnnotation(img, bound)
     
     #Get the angle to rotate the image with
     angle = random.randint(1, 360)
@@ -183,7 +139,6 @@ def RotateAnnotation(img, bound):
     
 def RescaleAnnotation(img, bound):
     
-    '''#Comment out if no offset
     #Cut the annotation with or without offset 
     case = random.randint(0, 1)
     
@@ -191,10 +146,6 @@ def RescaleAnnotation(img, bound):
         rot_img = StandardAnnotation(img, bound)
     else:
         rot_img = Offset2dAnnotation(img, bound)
-    '''
-    
-    #Comment out if with offset
-    rot_img = StandardAnnotation(img, bound)
     
     #Save the original size of the image (in case it is not 100)
     orig_height = rot_img.shape[0]
@@ -224,7 +175,7 @@ def HotKeyEncode(int_list, num_categories):
     
     for element in int_list:
         hotkey = np.zeros(num_categories)
-        hotkey[element] = 1
+        hotkey[element-1] = 1
         HotKeyList.append(hotkey)
         
     return HotKeyList
@@ -234,13 +185,13 @@ def HotKeyEncode(int_list, num_categories):
 
 
 ###START LOADING DATA
-training_annotations_per_category = [651, 1326]
+training_annotations_per_category = [172,  52,  53, 286, 122, 325,  24,  61, 124,  38,  69, 651]
 augmentation_numbers_for_training = getNormalizedNumbersOfAugmentation(training_annotations_per_category)
 #validation_annotations_per_category = [189, 60, 61, 313, 123, 296, 48, 97, 107, 39, 66, 718]
 #augmentation_numbers_for_validation = getNormalizedNumbersOfAugmentation(validation_annotations_per_category)
   
 script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
-rel_path = "../Flurplandaten/floorplan_metadata_binary_random.json"
+rel_path = "../Flurplandaten/floorplan_metadata_cleaned_nobidet.json"
 metadata_path = os.path.join(script_dir, rel_path)
 
 #Load json file    
@@ -253,7 +204,7 @@ imgs = []
 imgs_nametoind = {}
 
 #Path for accessing images
-rel_path = "../Flurplandaten/images_only_rectangular"
+rel_path = "../Flurplandaten/images_roundings"
 path = os.path.join(script_dir, rel_path)
 
 #Counter to get index of image
@@ -303,8 +254,7 @@ object_categories = []
 #Loop through all annotations
 for annot in metadata['annotations']:
     #Get bounding box
-    bbox = annot['bbox']  
-    points = annot['segmentation']                                          
+    bbox = annot['bbox']                                            
     #Get image id
     img_id = annot['image_id']    
 
@@ -318,42 +268,38 @@ for annot in metadata['annotations']:
         annot_img = imgs[imgs_idtoind[img_id]]                      
         
         #Add current annotation to list
-        annotations.append(StandardAnnotation(annot_img, points))
+        annotations.append(StandardAnnotation(annot_img, bbox))
         object_categories.append(object_category)
         
         
         #Create varied Verions of this Annotation (only for training annotations, otherwise comment)
         #Change for training
-
+        '''
         for i in range(int(augmentation_numbers_for_training[object_category-1])):
-            #Type of augmentation with offset
-            #augmentation = random.randint(0, 2)
-            #without offset
-            augmentation = random.randint(0, 1)
+            #Type of augmentation
+            augmentation = random.randint(0, 2)
             
             #Offset only
-            '''
             if augmentation == 0:
                              
                 aug_annot = Offset2dAnnotation(annot_img, bbox)
                 annotations.append(aug_annot)
                 object_categories.append(object_category)
-            '''
             #Rotate
-            if augmentation == 0:# With offset: elif, 1; without : if, 0 
+            elif augmentation == 1:
 
                 aug_annot = RotateAnnotation(annot_img, bbox)
                 annotations.append(aug_annot)
                 object_categories.append(object_category)
 
             #Rescale
-            elif augmentation == 1:#With offset: 2; without: 1
+            elif augmentation == 2:
 
                 aug_annot = RescaleAnnotation(annot_img, bbox)
                 annotations.append(aug_annot)
                 object_categories.append(object_category)
         
-
+        '''
 #Hot key encoding of object categories
 
         
@@ -361,13 +307,13 @@ for annot in metadata['annotations']:
 #https://stackoverflow.com/questions/30698004/how-can-i-serialize-a-numpy-array-while-preserving-matrix-dimensions
 
 script_dir = os.path.dirname(__file__)
-annotation_path = os.path.join(script_dir, "../Flurplandaten/preprocessed__training_annotations_binary_random_nooffset_white.p")
+annotation_path = os.path.join(script_dir, "../Flurplandaten/preprocessed__test_annotations_nobidet_negative2.p")
 pickle.dump(annotations, open(annotation_path, "wb"))
 
-#object_categories_encoded = HotKeyEncode(object_categories, 2)
+object_categories_encoded = HotKeyEncode(object_categories, 12)
 
-object_path = os.path.join(script_dir, "../Flurplandaten/object_list_for_training_annotations_binary_random_nooffset_white.p")
-pickle.dump(object_categories, open(object_path, "wb"))
+object_path = os.path.join(script_dir, "../Flurplandaten/object_list_for_test_annotations_nobidet_negative2.p")
+pickle.dump(object_categories_encoded, open(object_path, "wb"))
 
 ###END PREPROCESSING 
     
